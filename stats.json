@@ -9,20 +9,20 @@
       "total": 63
     },
     "LEM": {
-      "done": 52,
-      "inprogress": 4,
+      "done": 33,
+      "inprogress": 3,
       "review": 0,
-      "open": 38,
+      "open": 58,
       "abandoned": 6,
       "total": 100
     },
     "LRF": {
-      "done": 25,
-      "inprogress": 6,
+      "done": 19,
+      "inprogress": 5,
       "review": 0,
-      "open": 51,
+      "open": 44,
       "abandoned": 4,
-      "total": 86
+      "total": 72
     }
   }
 }
