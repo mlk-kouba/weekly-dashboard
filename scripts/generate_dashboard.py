@@ -138,10 +138,11 @@ def get_active_sprint_issues(project: str) -> list:
             f'ORDER BY status ASC, priority DESC'
         )
     else:
-        # LEM/LRF: not-done tickets + done-this-month (explicit, no sprint dependency)
+        # LEM/LRF: active tickets updated this year + done this month
+        # updatedDate >= startOfYear() filters out stale tickets from prior years
         jql = (
             f'project = {project} AND issuetype != Sub-task AND ('
-            f'statusCategory != Done OR '
+            f'(statusCategory != Done AND updatedDate >= startOfYear()) OR '
             f'(statusCategory = Done AND updatedDate >= startOfMonth())'
             f') ORDER BY status ASC, updated DESC'
         )
