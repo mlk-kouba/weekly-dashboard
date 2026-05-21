@@ -124,13 +124,14 @@ def jira_get(path: str, params: dict = None) -> dict:
 
 def get_active_sprint_issues(project: str) -> list:
     """Return issues for a project.
-    LEF filters by active MVP label (JUNEMVP/JULYMVP). LEM and LRF use open sprint,
-    falling back to recently updated non-done issues if no active sprint exists."""
+    LEF: all JUNEMVP/JULYMVP tickets across ALL sprints (to capture done items in closed sprints).
+    LEM and LRF use open sprint, falling back to in-progress + done-this-month if no active sprint."""
     meta  = PROJECT_META[project]
     label = active_mvp_label()
     if meta["mvp_label"]:
+        # No sprint filter — get ALL MVP-labelled tickets so done items in closed sprints are counted
         jql = (
-            f'project = {project} AND sprint in openSprints() AND labels = {label} '
+            f'project = {project} AND labels = {label} '
             f'ORDER BY status ASC, priority DESC'
         )
     else:
