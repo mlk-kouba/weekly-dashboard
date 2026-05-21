@@ -134,12 +134,12 @@ def get_active_sprint_issues(project: str) -> list:
     if meta["mvp_label"]:
         # No sprint filter — get ALL MVP-labelled tickets so done items in closed sprints are counted
         jql = (
-            f'project = {project} AND labels = {label} '
+            f'project = {project} AND labels = {label} AND issuetype != Sub-task '
             f'ORDER BY status ASC, priority DESC'
         )
     else:
         jql = (
-            f'project = {project} AND sprint in openSprints() '
+            f'project = {project} AND sprint in openSprints() AND issuetype != Sub-task '
             f'ORDER BY status ASC, priority DESC'
         )
     issues = []
@@ -163,7 +163,7 @@ def get_active_sprint_issues(project: str) -> list:
     if not issues and not meta["mvp_label"]:
         print(f"  {project}: no active sprint found, falling back to in-progress + done this month")
         fallback_jql = (
-            f'project = {project} AND ('
+            f'project = {project} AND issuetype != Sub-task AND ('
             f'statusCategory != Done OR '
             f'(statusCategory = Done AND updatedDate >= startOfMonth())'
             f') ORDER BY status ASC, updated DESC'
@@ -185,7 +185,7 @@ def get_active_sprint_issues(project: str) -> list:
 def get_lookahead_issues(project: str, label: str) -> list:
     """Return not-done issues tagged with the upcoming MVP label for look-ahead display."""
     jql = (
-        f'project = {project} AND labels = {label} AND statusCategory != Done '
+        f'project = {project} AND labels = {label} AND issuetype != Sub-task AND statusCategory != Done '
         f'ORDER BY priority DESC, updated DESC'
     )
     data = jira_get("search/jql", {
