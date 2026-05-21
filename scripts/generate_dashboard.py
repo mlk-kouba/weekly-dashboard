@@ -186,21 +186,17 @@ def get_lookahead_issues(project: str, label: str) -> list:
     return issues
 
 def classify_status(raw_status: str, status_category_key: str = "") -> str:
-    """Use Jira statusCategory as primary signal; STATUS_MAP overrides for review bucket."""
-    # STATUS_MAP takes priority for review/abandoned statuses
+    """STATUS_MAP always wins for known statuses; fall back to Jira statusCategory for unknowns."""
     mapped = STATUS_MAP.get(raw_status.lower().strip())
-    if mapped in ("review", "abandoned"):
+    if mapped:
         return mapped
-    # Use Jira's own statusCategory for everything else
+    # Unknown status — use Jira's statusCategory as fallback
     cat = status_category_key.lower()
     if cat == "done":
         return "done"
-    if cat == "indeterminate":   # Jira's "In Progress" category key
+    if cat == "indeterminate":   # Jira's "In Progress" category
         return "inprogress"
-    if cat == "new":             # Jira's "To Do" category key
-        return "open"
-    # Fallback to STATUS_MAP if statusCategory is missing
-    return mapped or "open"
+    return "open"                # Jira's "To Do" / unknown
 
 def bucket_issues(issues: list) -> dict:
     buckets = {"inprogress": [], "review": [], "done": [], "abandoned": [], "open": []}
