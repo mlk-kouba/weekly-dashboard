@@ -68,6 +68,10 @@ STATUS_MAP = {
     "qa":                     "review",
     "testing":                "review",
     "peer review":            "review",
+    "verify ready":           "review",
+    "verifying":              "review",
+    "final review":           "review",
+    "in final review":        "review",
     # Done
     "done":                   "done",
     "closed":                 "done",
@@ -76,6 +80,7 @@ STATUS_MAP = {
     "completed":              "done",
     # Not Started / Open
     "open":                   "open",
+    "open request":           "open",
     "to do":                  "open",
     "backlog":                "open",
     "selected for development": "open",
@@ -618,7 +623,7 @@ def main():
     print(f"Fetching {label} total count for LEF...")
     resp = jira_get("search/jql", {
         "jql": f"project = LEF AND labels = {label}",
-        "startAt": 0, "maxResults": 0, "fields": "summary",
+        "startAt": 0, "maxResults": 1, "fields": "summary",
     })
     mvp_totals["LEF"] = resp.get("total", len(all_issues["LEF"]))
     print(f"  LEF {label} total: {mvp_totals['LEF']}")
