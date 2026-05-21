@@ -57,7 +57,24 @@
   .alert-icon { font-size: 1rem; flex-shrink: 0; }
   .alert-red { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
   .alert-yellow { background: #fefce8; border: 1px solid #fde68a; color: #78350f; }
-  .alert-green { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
+  .action-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .action-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.82rem; line-height: 1.5; }
+  .action-num { background: #6366f1; color: white; font-weight: 800; font-size: 0.72rem; border-radius: 99px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .action-text { color: #374151; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 0.8rem; color: #7c3aed; }
+  .pill-gray   { background: #f1f5f9; color: #475569; }
+  .pill-purple { background: #ede9fe; color: #6d28d9; }
+  .pill-red    { background: #fee2e2; color: #b91c1c; }
+  .pill-blue   { background: #dbeafe; color: #1d4ed8; }
+  .wow-table th { padding: 8px 12px; text-align: left; font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .wow-table td { padding: 8px 12px; color: #374151; font-size: 0.8rem; }
+  .wow-table tr:nth-child(even) { background: #fafafa; }
+  .wow-table tr { border-bottom: 1px solid #f0f2f5; }
+  .change-pill { font-weight: 700; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; }
+  .change-up   { background: #dcfce7; color: #15803d; }
+  .change-down { background: #fee2e2; color: #b91c1c; }
+  .change-new  { background: #ede9fe; color: #6d28d9; }
+  .change-flat { background: #f1f5f9; color: #64748b; }
 
 </style>
 </head>
@@ -80,7 +97,12 @@
 </div>
 
 <div class="grid">
-<div class="card full" style="border-top: 4px solid #6366f1;"><div class="section-title">Sprint Summary</div><table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-top:8px;"><thead><tr style="background:#f0f2f5;"><th style="padding:8px 12px;text-align:left;">Board</th><th style="padding:8px 12px;text-align:left;">Total</th><th style="padding:8px 12px;text-align:left;">In Progress</th><th style="padding:8px 12px;text-align:left;">Done</th><th style="padding:8px 12px;text-align:left;">Abandoned</th><th style="padding:8px 12px;text-align:left;">% Done</th></tr></thead><tbody><tr style="border-bottom:1px solid #f0f2f5;"><td style="padding:8px 12px;font-weight:700;color:#2563eb;">LEF</td><td style="padding:8px 12px;">24</td><td style="padding:8px 12px;color:#2563eb;">10</td><td style="padding:8px 12px;color:#16a34a;">12</td><td style="padding:8px 12px;color:#9ca3af;">0</td><td style="padding:8px 12px;font-weight:700;">50%</td></tr><tr style="border-bottom:1px solid #f0f2f5;"><td style="padding:8px 12px;font-weight:700;color:#2563eb;">LEM</td><td style="padding:8px 12px;">100</td><td style="padding:8px 12px;color:#2563eb;">4</td><td style="padding:8px 12px;color:#16a34a;">52</td><td style="padding:8px 12px;color:#9ca3af;">6</td><td style="padding:8px 12px;font-weight:700;">52%</td></tr><tr style="border-bottom:1px solid #f0f2f5;"><td style="padding:8px 12px;font-weight:700;color:#2563eb;">LRF</td><td style="padding:8px 12px;">86</td><td style="padding:8px 12px;color:#2563eb;">6</td><td style="padding:8px 12px;color:#16a34a;">25</td><td style="padding:8px 12px;color:#9ca3af;">4</td><td style="padding:8px 12px;font-weight:700;">29%</td></tr></tbody></table></div>
+<div class="card two-col" style="border-top:4px solid #6366f1"><div class="project-header"><div class="project-name">&#x26A1; Actions Required</div></div><ul class="action-list"><li><span class="action-num">1</span><div class="action-text"><strong>[LEF &mdash; URGENT]</strong> 2 unstarted <code>JUNEMVP</code> tickets with ~50% still to go. Assign owners or cut scope this week.</div></li><li><span class="action-num">2</span><div class="action-text"><strong>[LEF &mdash; July MVP]</strong> 50 tickets tagged JULYMVP &mdash; 4 in progress, 42 unassigned. Staffing plan needed before end of June.</div></li><li><span class="action-num">3</span><div class="action-text"><strong>[LEM]</strong> 52 tickets completed this month. 4 still active.</div></li><li><span class="action-num">4</span><div class="action-text"><strong>[LRF]</strong> 6 items in flight, 25 completed overall.</div></li></ul></div>
+<div class="card" style="border-top:4px solid #6366f1"><div class="project-header"><div class="project-name">&#x1F5D3;&#xFE0F; Roadmap Snapshot</div></div><div class="ticket-list"><div class="ticket open"><span class="pill pill-red" style="min-width:55px;text-align:center;">June</span><span class="ticket-sum">Assessment/RPZ/SoR (LEF), Intercom Pt.1, TAL China, Admin Reports</span></div><div class="ticket open"><span class="pill pill-purple" style="min-width:55px;text-align:center;">July</span><span class="ticket-sum">Mobile RPZ (iOS/Android), Teacher Guides, Engagement Activities, Passage Search</span></div><div class="ticket open"><span class="pill pill-gray" style="min-width:55px;text-align:center;">August</span><span class="ticket-sum">Readium CMS Features, EL/LAZ Correlations</span></div><div class="ticket open"><span class="pill pill-gray" style="min-width:55px;text-align:center;">Sept</span><span class="ticket-sum">TAL China (pt.2), CAI iLearn Enhancements</span></div><div class="ticket open"><span class="pill pill-gray" style="min-width:55px;text-align:center;">Oct</span><span class="ticket-sum">SITN, Content Refinement</span></div><div class="ticket open"><span class="pill pill-gray" style="min-width:55px;text-align:center;">Dec</span><span class="ticket-sum">NWEA API Upgrade, Intercom Pt.2 (TBD), Español/ELL (decision pending)</span></div></div></div>
+</div>
+
+<div class="grid" style="margin-top:0;">
+
 </div>
 </body>
 </html>
