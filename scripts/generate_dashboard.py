@@ -262,7 +262,24 @@ CSS = """
   .alert-icon { font-size: 1rem; flex-shrink: 0; }
   .alert-red { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
   .alert-yellow { background: #fefce8; border: 1px solid #fde68a; color: #78350f; }
-  .alert-green { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
+  .action-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .action-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.82rem; line-height: 1.5; }
+  .action-num { background: #6366f1; color: white; font-weight: 800; font-size: 0.72rem; border-radius: 99px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .action-text { color: #374151; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 0.8rem; color: #7c3aed; }
+  .pill-gray   { background: #f1f5f9; color: #475569; }
+  .pill-purple { background: #ede9fe; color: #6d28d9; }
+  .pill-red    { background: #fee2e2; color: #b91c1c; }
+  .pill-blue   { background: #dbeafe; color: #1d4ed8; }
+  .wow-table th { padding: 8px 12px; text-align: left; font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .wow-table td { padding: 8px 12px; color: #374151; font-size: 0.8rem; }
+  .wow-table tr:nth-child(even) { background: #fafafa; }
+  .wow-table tr { border-bottom: 1px solid #f0f2f5; }
+  .change-pill { font-weight: 700; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; }
+  .change-up   { background: #dcfce7; color: #15803d; }
+  .change-down { background: #fee2e2; color: #b91c1c; }
+  .change-new  { background: #ede9fe; color: #6d28d9; }
+  .change-flat { background: #f1f5f9; color: #64748b; }
 """
 
 def h(text: str) -> str:
@@ -482,38 +499,171 @@ def get_prev_stats(slug: str) -> dict:
         return {}
     return data[dates[-1]]
 
-def summary_card(all_issues: dict) -> str:
+def actions_card(all_issues: dict, mvp_total: int, lookahead: list) -> str:
+    lef_b   = bucket_issues(all_issues["LEF"])
+    lem_b   = bucket_issues(all_issues["LEM"])
+    lrf_b   = bucket_issues(all_issues["LRF"])
+    lef_open = len(lef_b["open"])
+    lef_done = len(lef_b["done"])
+    lem_done = len(lem_b["done"])
+    lef_pct  = round(lef_done / mvp_total * 100) if mvp_total else 0
+    mvp_name = active_mvp_label()
+    mvp_disp = "June MVP" if "JUNE" in mvp_name else "July MVP"
+
+    items = []
+    # LEF open risk
+    if lef_open > 0:
+        items.append(
+            f'<strong>[LEF &mdash; URGENT]</strong> {lef_open} unstarted '
+            f'<code>{mvp_name}</code> tickets with '
+            f'{"~" if lef_pct < 70 else ""}{100 - lef_pct}% still to go. '
+            f'Assign owners or cut scope this week.'
+        )
+    # July lookahead
+    if lookahead:
+        unassigned = sum(1 for i in lookahead if not i["fields"].get("assignee"))
+        items.append(
+            f'<strong>[LEF &mdash; July MVP]</strong> {len(lookahead)} tickets tagged JULYMVP &mdash; '
+            f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "inprogress")} in progress, '
+            f'{unassigned} unassigned. Staffing plan needed before end of June.'
+        )
+    # LEM done items
+    if lem_done > 0:
+        items.append(
+            f'<strong>[LEM]</strong> {lem_done} tickets completed this month. '
+            f'{len(lem_b["inprogress"]) + len(lem_b["review"])} still active.'
+        )
+    # LRF
+    lrf_prog = len(lrf_b["inprogress"]) + len(lrf_b["review"])
+    if lrf_prog > 0:
+        items.append(
+            f'<strong>[LRF]</strong> {lrf_prog} items in flight, '
+            f'{len(lrf_b["done"])} completed overall.'
+        )
+
+    lis = "".join(
+        f'<li><span class="action-num">{i+1}</span><div class="action-text">{item}</div></li>'
+        for i, item in enumerate(items)
+    )
+    return (
+        f'<div class="card two-col" style="border-top:4px solid #6366f1">'
+        f'<div class="project-header"><div class="project-name">&#x26A1; Actions Required</div></div>'
+        f'<ul class="action-list">{lis}</ul>'
+        f'</div>'
+    )
+
+def roadmap_card() -> str:
+    try:
+        with open("roadmap.json") as f:
+            entries = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        entries = []
+    rows = "".join(
+        f'<div class="ticket open">'
+        f'<span class="pill {e["pill"]}" style="min-width:55px;text-align:center;">{h(e["month"])}</span>'
+        f'<span class="ticket-sum">{h(e["items"])}</span>'
+        f'</div>'
+        for e in entries
+    )
+    return (
+        f'<div class="card" style="border-top:4px solid #6366f1">'
+        f'<div class="project-header"><div class="project-name">&#x1F5D3;&#xFE0F; Roadmap Snapshot</div></div>'
+        f'<div class="ticket-list">{rows}</div>'
+        f'</div>'
+    )
+
+def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_total: int) -> str:
+    if not prev_stats:
+        return ""
+
+    prev_dates = sorted(prev_stats.keys())
+    prev_slug  = prev_dates[-1] if prev_dates else None
+    if not prev_slug:
+        return ""
+
+    # Format prev date slug YYMMDD → "May 14"
+    try:
+        prev_dt   = datetime.datetime.strptime(prev_slug, "%y%m%d")
+        prev_label = prev_dt.strftime("%B %-d")
+    except ValueError:
+        prev_label = prev_slug
+
+    curr_label = date_str  # already "May 21, 2026"
+
+    COLOR = {
+        "LEF": "#dc2626", "LEM": "#d97706", "LRF": "#16a34a",
+    }
+    TH = 'style="padding:8px 12px;text-align:{align};font-size:0.68rem;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;"'
+    TD = 'style="padding:8px 12px;"'
+
+    def change_pill(curr, prev_val, lower_is_better=False):
+        if prev_val is None:
+            return '<span class="change-pill change-new">New &#x2605;</span>'
+        diff = curr - prev_val
+        if diff == 0:
+            return '<span class="change-pill change-flat">no change</span>'
+        pct = round(abs(diff) / prev_val * 100) if prev_val else 0
+        arrow = "&#x2191;" if diff > 0 else "&#x2193;"
+        sign  = "+" if diff > 0 else ""
+        good  = (diff < 0) if lower_is_better else (diff > 0)
+        cls   = "change-up" if good else "change-down"
+        return f'<span class="change-pill {cls}">{sign}{pct}% {arrow}</span>'
+
     rows = ""
-    for proj, issues in all_issues.items():
-        buckets  = bucket_issues(issues)
-        done     = len(buckets["done"])
-        in_prog  = len(buckets["inprogress"]) + len(buckets["review"])
-        aband    = len(buckets["abandoned"])
-        total    = sum(len(v) for v in buckets.values())
-        pct      = round(done / total * 100) if total else 0
+    alt  = False
+    def row(proj, metric, prev_val, curr_val, note="", lower_is_better=False):
+        nonlocal alt, rows
+        bg   = ' style="background:#fafafa;"' if alt else ""
+        pill = change_pill(curr_val, prev_val, lower_is_better)
         rows += (
-            f'<tr style="border-bottom:1px solid #f0f2f5;">'
-            f'<td style="padding:8px 12px;font-weight:700;color:#2563eb;">{h(proj)}</td>'
-            f'<td style="padding:8px 12px;">{total}</td>'
-            f'<td style="padding:8px 12px;color:#2563eb;">{in_prog}</td>'
-            f'<td style="padding:8px 12px;color:#16a34a;">{done}</td>'
-            f'<td style="padding:8px 12px;color:#9ca3af;">{aband}</td>'
-            f'<td style="padding:8px 12px;font-weight:700;">{pct}%</td>'
+            f'<tr{bg}>'
+            f'<td {TD} style="padding:8px 12px;font-weight:700;color:{COLOR[proj]};">{proj}</td>'
+            f'<td {TD}>{h(metric)}</td>'
+            f'<td {TD} style="padding:8px 12px;text-align:center;color:#64748b;">{prev_val if prev_val is not None else "&mdash;"}</td>'
+            f'<td {TD} style="padding:8px 12px;text-align:center;font-weight:700;">{curr_val}</td>'
+            f'<td {TD} style="padding:8px 12px;text-align:center;">{pill}</td>'
+            f'<td {TD} style="padding:8px 12px;color:#6b7280;font-size:0.77rem;">{note}</td>'
             f'</tr>'
         )
+        alt = not alt
+
+    for proj in PROJECTS:
+        b    = bucket_issues(all_issues[proj])
+        prev = prev_stats.get(proj, {})
+        done = len(b["done"])
+        prog = len(b["inprogress"]) + len(b["review"])
+        open_ = len(b["open"])
+        if proj == "LEF":
+            pct_curr = round(done / mvp_total * 100) if mvp_total else 0
+            pct_prev = round((prev.get("done") or 0) / mvp_total * 100) if mvp_total else None
+            row("LEF", f"{active_mvp_label().replace('MVP','')} MVP — Completed",
+                prev.get("done"), done,
+                f'{pct_prev}% &rarr; {pct_curr}% complete' if pct_prev is not None else f'{pct_curr}% complete')
+            row("LEF", "Not Started",       prev.get("open"),      open_,  "", lower_is_better=True)
+            row("LEF", "In Review/Testing", prev.get("review"),    len(b["review"]))
+        else:
+            row(proj, "Done This Month", prev.get("done"),      done)
+            row(proj, "In Progress",     prev.get("inprogress"), prog)
+
+    headers = (
+        f'<tr style="background:#f0f2f5;">'
+        f'<th {TH.format(align="left")} style="width:55px;">Board</th>'
+        f'<th {TH.format(align="left")}>Metric</th>'
+        f'<th {TH.format(align="center")}>{h(prev_label)}</th>'
+        f'<th {TH.format(align="center")}>{h(curr_label)}</th>'
+        f'<th {TH.format(align="center")}>Change</th>'
+        f'<th {TH.format(align="left")}>Notes</th>'
+        f'</tr>'
+    )
     return (
-        f'<div class="card full" style="border-top: 4px solid #6366f1;">'
-        f'<div class="section-title">Sprint Summary</div>'
-        f'<table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-top:8px;">'
-        f'<thead><tr style="background:#f0f2f5;">'
-        f'<th style="padding:8px 12px;text-align:left;">Board</th>'
-        f'<th style="padding:8px 12px;text-align:left;">Total</th>'
-        f'<th style="padding:8px 12px;text-align:left;">In Progress</th>'
-        f'<th style="padding:8px 12px;text-align:left;">Done</th>'
-        f'<th style="padding:8px 12px;text-align:left;">Abandoned</th>'
-        f'<th style="padding:8px 12px;text-align:left;">% Done</th>'
-        f'</tr></thead>'
-        f'<tbody>{rows}</tbody>'
+        f'<div class="card full" style="border-top:4px solid #6366f1;margin-top:0;">'
+        f'<div class="project-header" style="margin-bottom:4px;">'
+        f'<div>'
+        f'<div class="project-name">&#x1F504; What Changed This Week</div>'
+        f'<div class="project-sub">{h(prev_label)} &rarr; {h(date_str)}</div>'
+        f'</div></div>'
+        f'<table class="wow-table" style="width:100%;border-collapse:collapse;margin-top:8px;">'
+        f'<thead>{headers}</thead><tbody>{rows}</tbody>'
         f'</table>'
         f'</div>'
     )
@@ -541,8 +691,10 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
             lookahead=lookahead_lef if proj == "LEF" else None,
         )
 
-    cards   = "\n".join(_card(proj) for proj in PROJECTS)
-    summary = summary_card(all_issues)
+    cards      = "\n".join(_card(proj) for proj in PROJECTS)
+    lef_mvp    = mvp_totals.get("LEF", 0)
+    bottom_row = actions_card(all_issues, lef_mvp, lookahead_lef) + "\n" + roadmap_card()
+    wow        = what_changed_card(date_str, all_issues, prev_stats, lef_mvp)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -571,7 +723,11 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
 </div>
 
 <div class="grid">
-{summary}
+{bottom_row}
+</div>
+
+<div class="grid" style="margin-top:0;">
+{wow}
 </div>
 </body>
 </html>"""
