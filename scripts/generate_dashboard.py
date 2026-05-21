@@ -38,6 +38,7 @@ PROJECT_META = {
         "mvp_label": True,
         "sub": "{total} tickets · <span style=\"color:#dc2626;font-weight:600;\">{mvp_name} deadline</span>",
         "done_label": "Done", "open_label": "Not Started",
+        "completed_label": "&#x2705; Completed This Sprint",
     },
     "LEM": {
         "label": "LEM", "desc": "Maintenance",
@@ -45,6 +46,7 @@ PROJECT_META = {
         "mvp_label": False,
         "sub": "{backlog} in backlog &middot; Kanban &middot; No hard deadline",
         "done_label": "Done (Month)", "open_label": "Planned/Open",
+        "completed_label": "&#x2705; Completed This Week",
     },
     "LRF": {
         "label": "LRF", "desc": "Literacy Integration",
@@ -52,6 +54,7 @@ PROJECT_META = {
         "mvp_label": False,
         "sub": "Foundation / infra work &middot; No hard deadline",
         "done_label": "Done", "open_label": "New/Sel",
+        "completed_label": "Recently Completed &#x2705;",
     },
 }
 
@@ -441,26 +444,33 @@ def project_card(project: str, issues: list, prev: dict = None, mvp_total: int =
 
     # Ticket sections — no "Open/Not Started" list; done items show pill
     body = ""
-    body += ticket_section("In Progress",           buckets["inprogress"], "inprogress")
-    body += ticket_section("In Review / Testing",   buckets["review"],     "done",      pill="status")
+    body += ticket_section("In Progress", buckets["inprogress"], "inprogress")
 
-    if meta["mvp_label"]:
-        body += ticket_section("&#x2705; Completed This Sprint", buckets["done"], "done", limit=6, pill="Done")
-        if lookahead:
-            lookahead_label = "July MVP" if active_mvp_label() == "JUNEMVP" else "Next MVP"
-            body += (
-                f'<div class="divider"></div>'
-                f'<div class="section-title" style="color:#7c3aed;">'
-                f'&#x1F52D; {h(lookahead_label)} Outlook</div>'
-                f'<div class="alert alert-yellow">'
-                f'<span class="alert-icon">&#x1F4CB;</span>'
-                f'<span><strong>{len(lookahead)} tickets tagged {lookahead_label}</strong> &mdash; '
-                f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "done")} done, '
-                f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "inprogress")} in progress.</span>'
-                f'</div>'
-            )
+    # Always show In Review / Testing — show placeholder if empty
+    if buckets["review"]:
+        body += ticket_section("In Review / Testing", buckets["review"], "done", pill="status")
     else:
-        body += ticket_section("&#x2705; Completed This Month", buckets["done"], "done", limit=6, pill="Done")
+        body += (
+            f'<div class="divider"></div>'
+            f'<div class="section-title">In Review / Testing</div>'
+            f'<div style="font-size:0.78rem;color:#94a3b8;padding:6px 0 10px 0;">None currently in review</div>'
+        )
+
+    body += ticket_section(meta["completed_label"], buckets["done"], "done", limit=6, pill="Done")
+
+    if meta["mvp_label"] and lookahead:
+        lookahead_label = "July MVP" if active_mvp_label() == "JUNEMVP" else "Next MVP"
+        body += (
+            f'<div class="divider"></div>'
+            f'<div class="section-title" style="color:#7c3aed;">'
+            f'&#x1F52D; {h(lookahead_label)} Outlook</div>'
+            f'<div class="alert alert-yellow">'
+            f'<span class="alert-icon">&#x1F4CB;</span>'
+            f'<span><strong>{len(lookahead)} tickets tagged {lookahead_label}</strong> &mdash; '
+            f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "done")} done, '
+            f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "inprogress")} in progress.</span>'
+            f'</div>'
+        )
 
     return (
         f'<div class="card" style="border-top: 4px solid {meta["color"]}">'
