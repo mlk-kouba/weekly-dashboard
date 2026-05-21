@@ -79,7 +79,7 @@ def get_active_sprint_issues(project: str) -> list:
     issues = []
     start  = 0
     while True:
-        data = jira_get("search", {
+        data = jira_get("search/jql", {
             "jql":        jql,
             "startAt":    start,
             "maxResults": 100,
