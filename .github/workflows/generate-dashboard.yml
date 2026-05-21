@@ -2,7 +2,7 @@ name: Generate Weekly Dashboard
 
 on:
   schedule:
-    - cron: '0 12 * * 3'   # Every Wednesday at noon UTC
+    - cron: '30 12 * * 3'  # Every Wednesday at 8:30am ET (12:30pm UTC)
   workflow_dispatch:         # Also runnable manually from the Actions tab
 
 permissions:
