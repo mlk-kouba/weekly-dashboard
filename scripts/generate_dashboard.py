@@ -80,7 +80,8 @@ def jira_get(path: str, params: dict = None) -> dict:
 
 def get_active_sprint_issues(project: str) -> list:
     """Return issues for a project.
-    LEF filters by active MVP label (JUNEMVP/JULYMVP). LEM and LRF use open sprint only."""
+    LEF filters by active MVP label (JUNEMVP/JULYMVP). LEM and LRF use open sprint,
+    falling back to recently updated non-done issues if no active sprint exists."""
     meta  = PROJECT_META[project]
     label = active_mvp_label()
     if meta["mvp_label"]:
@@ -109,6 +110,22 @@ def get_active_sprint_issues(project: str) -> list:
         start += len(batch)
         if start >= data.get("total", 0):
             break
+
+    # Fallback for boards with no active sprint: show recently updated non-done items
+    if not issues and not meta["mvp_label"]:
+        print(f"  {project}: no active sprint found, falling back to recent non-done issues")
+        fallback_jql = (
+            f'project = {project} AND statusCategory != Done '
+            f'ORDER BY updated DESC'
+        )
+        data = jira_get("search/jql", {
+            "jql":        fallback_jql,
+            "startAt":    0,
+            "maxResults": 50,
+            "fields":     "summary,status,assignee,priority,issuetype,labels",
+        })
+        issues = data.get("issues", [])
+
     return issues
 
 def classify_status(raw_status: str) -> str:
@@ -283,7 +300,7 @@ def summary_card(all_issues: dict) -> str:
         f'</div>'
     )
 
-def render_html(all_issues: dict, date_str: str) -> str:
+def render_html(all_issues: dict, date_str: str, today: datetime.date = None) -> str:
     cards   = "\n".join(project_card(proj, all_issues[proj]) for proj in PROJECTS)
     summary = summary_card(all_issues)
     label   = active_mvp_label(today)
@@ -364,7 +381,7 @@ def main():
         print(f"  {proj}: {len(issues)} issues")
         all_issues[proj] = issues
 
-    html = render_html(all_issues, date_str)
+    html = render_html(all_issues, date_str, today)
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write(html)
