@@ -1,12 +1,12 @@
 {
   "260521": {
     "LEF": {
-      "done": 12,
+      "done": 41,
       "inprogress": 7,
       "review": 3,
-      "open": 2,
-      "abandoned": 0,
-      "total": 24
+      "open": 9,
+      "abandoned": 3,
+      "total": 63
     },
     "LEM": {
       "done": 52,
