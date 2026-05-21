@@ -32,9 +32,9 @@ def active_mvp_label(today: datetime.date = None) -> str:
     return "JULYMVP" if d >= datetime.date(d.year, 7, 1) else "JUNEMVP"
 
 PROJECT_META = {
-    "LEF": {"label": "LEF", "desc": "Assessment / ReadingPowerZone / SoR", "color": "#dc2626", "badge": "badge-red",    "board": "scrum"},
-    "LEM": {"label": "LEM", "desc": "External Users / Rostering / Auth",   "color": "#f59e0b", "badge": "badge-yellow", "board": "kanban"},
-    "LRF": {"label": "LRF", "desc": "Platform / Infrastructure / NG",      "color": "#22c55e", "badge": "badge-green",  "board": "scrum"},
+    "LEF": {"label": "LEF", "desc": "Assessment / ReadingPowerZone / SoR", "color": "#dc2626", "badge": "badge-red",    "board": "scrum",  "mvp_label": True},
+    "LEM": {"label": "LEM", "desc": "Maintenance",                          "color": "#f59e0b", "badge": "badge-yellow", "board": "scrum",  "mvp_label": False},
+    "LRF": {"label": "LRF", "desc": "Literacy Integration",                 "color": "#22c55e", "badge": "badge-green",  "board": "scrum",  "mvp_label": False},
 }
 
 STATUS_MAP = {
@@ -79,18 +79,18 @@ def jira_get(path: str, params: dict = None) -> dict:
         return {}
 
 def get_active_sprint_issues(project: str) -> list:
-    """Return issues for a project — sprint-based for scrum, prioritized backlog for kanban.
-    Filters to the active MVP label (JUNEMVP before July, JULYMVP from July onward)."""
-    board = PROJECT_META[project]["board"]
+    """Return issues for a project.
+    LEF filters by active MVP label (JUNEMVP/JULYMVP). LEM and LRF use open sprint only."""
+    meta  = PROJECT_META[project]
     label = active_mvp_label()
-    if board == "kanban":
+    if meta["mvp_label"]:
         jql = (
-            f'project = {project} AND statusCategory != Done AND labels = {label} '
-            f'ORDER BY priority ASC, rank ASC'
+            f'project = {project} AND sprint in openSprints() AND labels = {label} '
+            f'ORDER BY status ASC, priority DESC'
         )
     else:
         jql = (
-            f'project = {project} AND sprint in openSprints() AND labels = {label} '
+            f'project = {project} AND sprint in openSprints() '
             f'ORDER BY status ASC, priority DESC'
         )
     issues = []
@@ -238,7 +238,7 @@ def project_card(project: str, issues: list) -> str:
         f'<div class="project-header">'
         f'<span class="badge {meta["badge"]}">{h(meta["label"])}</span>'
         f'<div><div class="project-name">{h(meta["label"])} <span style="font-weight:400;color:#6b7280;">&#xB7; {h(meta["desc"])}</span></div>'
-        f'<div class="project-sub">{total} {"prioritized items" if meta["board"] == "kanban" else "tickets in active sprint"}</div></div>'
+        f'<div class="project-sub">{total} tickets in active sprint</div></div>'
         f'</div>'
         f'{progress_bar(done, total)}'
         f'{stats}'
