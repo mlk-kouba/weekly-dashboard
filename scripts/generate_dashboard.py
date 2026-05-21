@@ -53,7 +53,7 @@ PROJECT_META = {
         "color": "#22c55e", "badge": "badge-green",
         "mvp_label": False,
         "sub": "Foundation / infra work &middot; No hard deadline",
-        "done_label": "Done", "open_label": "New/Sel",
+        "done_label": "Done (Month)", "open_label": "New/Sel",
         "completed_label": "Recently Completed &#x2705;",
     },
 }
@@ -127,20 +127,23 @@ def jira_get(path: str, params: dict = None) -> dict:
 
 def get_active_sprint_issues(project: str) -> list:
     """Return issues for a project.
-    LEF: all JUNEMVP/JULYMVP tickets across ALL sprints (to capture done items in closed sprints).
-    LEM and LRF use open sprint, falling back to in-progress + done-this-month if no active sprint."""
+    LEF: all JUNEMVP/JULYMVP tickets across ALL sprints (Done = all MVP done tickets).
+    LEM and LRF: all not-done tickets + done tickets updated this month (Done = done this month)."""
     meta  = PROJECT_META[project]
     label = active_mvp_label()
     if meta["mvp_label"]:
-        # No sprint filter — get ALL MVP-labelled tickets so done items in closed sprints are counted
+        # LEF: no sprint filter — all MVP-labelled tickets so done in closed sprints are counted
         jql = (
             f'project = {project} AND labels = {label} AND issuetype != Sub-task '
             f'ORDER BY status ASC, priority DESC'
         )
     else:
+        # LEM/LRF: not-done tickets + done-this-month (explicit, no sprint dependency)
         jql = (
-            f'project = {project} AND sprint in openSprints() AND issuetype != Sub-task '
-            f'ORDER BY status ASC, priority DESC'
+            f'project = {project} AND issuetype != Sub-task AND ('
+            f'statusCategory != Done OR '
+            f'(statusCategory = Done AND updatedDate >= startOfMonth())'
+            f') ORDER BY status ASC, updated DESC'
         )
     issues = []
     start  = 0
@@ -158,23 +161,6 @@ def get_active_sprint_issues(project: str) -> list:
         start += len(batch)
         if start >= data.get("total", 0):
             break
-
-    # Fallback for boards with no active sprint: show in-progress + done this month
-    if not issues and not meta["mvp_label"]:
-        print(f"  {project}: no active sprint found, falling back to in-progress + done this month")
-        fallback_jql = (
-            f'project = {project} AND issuetype != Sub-task AND ('
-            f'statusCategory != Done OR '
-            f'(statusCategory = Done AND updatedDate >= startOfMonth())'
-            f') ORDER BY status ASC, updated DESC'
-        )
-        data = jira_get("search/jql", {
-            "jql":        fallback_jql,
-            "startAt":    0,
-            "maxResults": 100,
-            "fields":     "summary,status,assignee,priority,issuetype,labels",
-        })
-        issues = data.get("issues", [])
 
     print(f"  {project}: {len(issues)} issues")
     if issues:
