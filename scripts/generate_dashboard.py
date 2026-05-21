@@ -185,14 +185,30 @@ def get_lookahead_issues(project: str, label: str) -> list:
     print(f"  {project} look-ahead ({label}): {len(issues)} issues")
     return issues
 
-def classify_status(raw_status: str) -> str:
-    return STATUS_MAP.get(raw_status.lower().strip(), "open")
+def classify_status(raw_status: str, status_category_key: str = "") -> str:
+    """Use Jira statusCategory as primary signal; STATUS_MAP overrides for review bucket."""
+    # STATUS_MAP takes priority for review/abandoned statuses
+    mapped = STATUS_MAP.get(raw_status.lower().strip())
+    if mapped in ("review", "abandoned"):
+        return mapped
+    # Use Jira's own statusCategory for everything else
+    cat = status_category_key.lower()
+    if cat == "done":
+        return "done"
+    if cat == "indeterminate":   # Jira's "In Progress" category key
+        return "inprogress"
+    if cat == "new":             # Jira's "To Do" category key
+        return "open"
+    # Fallback to STATUS_MAP if statusCategory is missing
+    return mapped or "open"
 
 def bucket_issues(issues: list) -> dict:
     buckets = {"inprogress": [], "review": [], "done": [], "abandoned": [], "open": []}
     for issue in issues:
-        raw = issue["fields"]["status"]["name"]
-        key = classify_status(raw)
+        status_field = issue["fields"]["status"]
+        raw          = status_field["name"]
+        cat_key      = status_field.get("statusCategory", {}).get("key", "")
+        key          = classify_status(raw, cat_key)
         if key not in buckets:
             key = "open"
         buckets[key].append(issue)
