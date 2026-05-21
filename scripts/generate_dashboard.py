@@ -43,7 +43,7 @@ PROJECT_META = {
         "label": "LEM", "desc": "Maintenance",
         "color": "#f59e0b", "badge": "badge-yellow",
         "mvp_label": False,
-        "sub": "Active sprint &middot; No hard deadline",
+        "sub": "{backlog} in backlog &middot; Kanban &middot; No hard deadline",
         "done_label": "Done (Month)", "open_label": "Planned/Open",
     },
     "LRF": {
@@ -383,7 +383,8 @@ def mvp_progress_bar(bar_label: str, done: int, total: int, prev_done: int = Non
         f'</div>'
     )
 
-def project_card(project: str, issues: list, prev: dict = None, mvp_total: int = None, lookahead: list = None) -> str:
+def project_card(project: str, issues: list, prev: dict = None, mvp_total: int = None,
+                 lookahead: list = None, backlog_total: int = None) -> str:
     meta    = PROJECT_META[project]
     buckets = bucket_issues(issues)
     done    = len(buckets["done"])
@@ -400,6 +401,8 @@ def project_card(project: str, issues: list, prev: dict = None, mvp_total: int =
     if meta["mvp_label"]:
         mvp_name = "June MVP" if "JUNE" in active_mvp_label().upper() else "July MVP"
         sub = meta["sub"].format(total=mvp_total or total, mvp_name=mvp_name)
+    elif "{backlog}" in meta["sub"]:
+        sub = meta["sub"].format(backlog=backlog_total if backlog_total is not None else total)
     else:
         sub = meta["sub"]
 
@@ -690,6 +693,7 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
             prev=p,
             mvp_total=mvp_totals.get(proj),
             lookahead=lookahead_lef if proj == "LEF" else None,
+            backlog_total=mvp_totals.get("LEM_backlog") if proj == "LEM" else None,
         )
 
     cards      = "\n".join(_card(proj) for proj in PROJECTS)
@@ -784,6 +788,15 @@ def main():
     })
     mvp_totals["LEF"] = resp.get("total", len(all_issues["LEF"]))
     print(f"  LEF {label} total: {mvp_totals['LEF']}")
+
+    # Fetch LEM total backlog (all non-abandoned tickets)
+    print("Fetching LEM backlog total...")
+    resp = jira_get("search/jql", {
+        "jql": "project = LEM AND statusCategory != Done AND status != Abandoned",
+        "startAt": 0, "maxResults": 1, "fields": "summary",
+    })
+    mvp_totals["LEM_backlog"] = resp.get("total", 0)
+    print(f"  LEM backlog total: {mvp_totals['LEM_backlog']}")
 
     # Load previous week's stats for deltas
     prev_stats = get_prev_stats(file_slug)
