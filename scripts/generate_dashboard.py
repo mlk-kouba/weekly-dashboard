@@ -312,8 +312,6 @@ def update_index(new_filename: str, date_str: str):
         content = ""
 
     new_entry = f'      <li><a href="{new_filename}">{h(date_str)} Weekly Dashboard</a></li>\n'
-
-    if "<ul>" in content:
         content = content.replace("<ul>", "<ul>\n" + new_entry, 1)
     else:
         content = (
@@ -337,7 +335,7 @@ def main():
     today      = datetime.date.today()
     date_str   = today.strftime("%B %-d, %Y")
     file_slug  = today.strftime("%y%m%d")
-    filename   = f"{file_slug}-weekly-dashboard.html"
+    filename   = f"{file_slug}_weekly_dashboard.html"
 
     print(f"Fetching Jira data for {', '.join(PROJECTS)} ...")
     all_issues = {}
