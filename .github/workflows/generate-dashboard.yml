@@ -31,6 +31,6 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add *.html index.html
+          git add *.html index.html stats.json
           git diff --cached --quiet || git commit -m "Weekly dashboard $(date +'%Y-%m-%d')"
           git push

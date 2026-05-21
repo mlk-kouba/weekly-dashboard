@@ -32,28 +32,67 @@ def active_mvp_label(today: datetime.date = None) -> str:
     return "JULYMVP" if d >= datetime.date(d.year, 7, 1) else "JUNEMVP"
 
 PROJECT_META = {
-    "LEF": {"label": "LEF", "desc": "Assessment / ReadingPowerZone / SoR", "color": "#dc2626", "badge": "badge-red",    "board": "scrum",  "mvp_label": True},
-    "LEM": {"label": "LEM", "desc": "Maintenance",                          "color": "#f59e0b", "badge": "badge-yellow", "board": "scrum",  "mvp_label": False},
-    "LRF": {"label": "LRF", "desc": "Literacy Integration",                 "color": "#22c55e", "badge": "badge-green",  "board": "scrum",  "mvp_label": False},
+    "LEF": {
+        "label": "LEF", "desc": "Assessment / ReadingPowerZone / SoR",
+        "color": "#dc2626", "badge": "badge-critical",
+        "mvp_label": True,
+        "sub": "{total} tickets · <span style=\"color:#dc2626;font-weight:600;\">{mvp_name} deadline</span>",
+        "done_label": "Done", "open_label": "Not Started",
+    },
+    "LEM": {
+        "label": "LEM", "desc": "Maintenance",
+        "color": "#f59e0b", "badge": "badge-yellow",
+        "mvp_label": False,
+        "sub": "Active sprint &middot; No hard deadline",
+        "done_label": "Done (Month)", "open_label": "Planned/Open",
+    },
+    "LRF": {
+        "label": "LRF", "desc": "Literacy Integration",
+        "color": "#22c55e", "badge": "badge-green",
+        "mvp_label": False,
+        "sub": "Foundation / infra work &middot; No hard deadline",
+        "done_label": "Done", "open_label": "New/Sel",
+    },
 }
 
 STATUS_MAP = {
-    "in progress":   "inprogress",
-    "in development": "inprogress",
-    "in review":     "review",
-    "in testing":    "review",
-    "code review":   "review",
-    "done":          "done",
-    "closed":        "done",
-    "resolved":      "done",
-    "blocked":       "blocked",
-    "impediment":    "blocked",
-    "open":          "open",
-    "to do":         "open",
-    "backlog":       "open",
+    # In Progress
+    "in progress":            "inprogress",
+    "in development":         "inprogress",
+    "active":                 "inprogress",
+    "working":                "inprogress",
+    # In Review
+    "in review":              "review",
+    "in testing":             "review",
+    "code review":            "review",
+    "qa":                     "review",
+    "testing":                "review",
+    "peer review":            "review",
+    # Done
+    "done":                   "done",
+    "closed":                 "done",
+    "resolved":               "done",
+    "complete":               "done",
+    "completed":              "done",
+    # Not Started / Open
+    "open":                   "open",
+    "to do":                  "open",
+    "backlog":                "open",
     "selected for development": "open",
-    "in planning":   "planning",
-    "planning":      "planning",
+    "in planning":            "open",
+    "planning":               "open",
+    "new":                    "open",
+    "ready":                  "open",
+    # Abandoned
+    "abandoned":              "abandoned",
+    "cancelled":              "abandoned",
+    "canceled":               "abandoned",
+    "won't fix":              "abandoned",
+    "wont fix":               "abandoned",
+    "duplicate":              "abandoned",
+    "invalid":                "abandoned",
+    "blocked":                "abandoned",
+    "impediment":             "abandoned",
 }
 
 # ---------------------------------------------------------------------------
@@ -134,14 +173,32 @@ def get_active_sprint_issues(project: str) -> list:
         print(f"  {project} statuses found: {', '.join(statuses)}")
     return issues
 
+def get_lookahead_issues(project: str, label: str) -> list:
+    """Return not-done issues tagged with the upcoming MVP label for look-ahead display."""
+    jql = (
+        f'project = {project} AND labels = {label} AND statusCategory != Done '
+        f'ORDER BY priority DESC, updated DESC'
+    )
+    data = jira_get("search/jql", {
+        "jql":        jql,
+        "startAt":    0,
+        "maxResults": 50,
+        "fields":     "summary,status,assignee,priority,issuetype,labels",
+    })
+    issues = data.get("issues", [])
+    print(f"  {project} look-ahead ({label}): {len(issues)} issues")
+    return issues
+
 def classify_status(raw_status: str) -> str:
     return STATUS_MAP.get(raw_status.lower().strip(), "open")
 
 def bucket_issues(issues: list) -> dict:
-    buckets = {"inprogress": [], "review": [], "done": [], "blocked": [], "open": [], "planning": []}
+    buckets = {"inprogress": [], "review": [], "done": [], "abandoned": [], "open": []}
     for issue in issues:
         raw = issue["fields"]["status"]["name"]
         key = classify_status(raw)
+        if key not in buckets:
+            key = "open"
         buckets[key].append(issue)
     return buckets
 
@@ -158,137 +215,287 @@ CSS = """
   .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
   .card.full { grid-column: 1 / -1; }
   .card.two-col { grid-column: span 2; }
-  .project-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #f0f2f5; }
-  .badge { font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
-  .badge-red { background: #fee2e2; color: #dc2626; }
+  .project-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #f0f2f5; }
+  .badge { font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; white-space: nowrap; }
+  .badge-critical { background: #fee2e2; color: #dc2626; }
   .badge-yellow { background: #fef9c3; color: #b45309; }
   .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
   .project-name { font-size: 1.1rem; font-weight: 700; }
   .project-sub { font-size: 0.78rem; color: #6b7280; margin-top: 1px; }
-  .stats { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-  .stat-box { flex: 1; min-width: 70px; background: #f8fafc; border-radius: 8px; padding: 10px 12px; text-align: center; border: 1px solid #e2e8f0; }
+  .stats { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat-box { flex: 1; min-width: 60px; background: #f8fafc; border-radius: 8px; padding: 10px 8px; text-align: center; border: 1px solid #e2e8f0; }
   .stat-box .num { font-size: 1.5rem; font-weight: 800; line-height: 1; }
-  .stat-box .lbl { font-size: 0.67rem; color: #64748b; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .stat-box .lbl { font-size: 0.65rem; color: #64748b; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
   .num-green { color: #16a34a; } .num-blue { color: #2563eb; } .num-orange { color: #d97706; } .num-red { color: #dc2626; } .num-gray { color: #9ca3af; }
   .progress-wrap { margin-bottom: 14px; }
-  .progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-bottom: 4px; }
+  .progress-label { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #64748b; margin-bottom: 4px; }
   .progress-bar { height: 10px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
   .progress-fill { height: 100%; border-radius: 99px; }
   .fill-green { background: linear-gradient(90deg, #22c55e, #16a34a); }
   .fill-orange { background: linear-gradient(90deg, #fb923c, #ea580c); }
   .fill-red { background: linear-gradient(90deg, #f87171, #dc2626); }
+  .divider { border: none; border-top: 1px solid #f0f2f5; margin: 12px 0; }
   .section-title { font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
   .ticket-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
   .ticket { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: #f8fafc; border-radius: 7px; border-left: 3px solid #e2e8f0; font-size: 0.8rem; }
-  .ticket.inprogress { border-left-color: #3b82f6; } .ticket.done { border-left-color: #22c55e; }
-  .ticket.blocked { border-left-color: #ef4444; } .ticket.open { border-left-color: #f59e0b; } .ticket.planning { border-left-color: #a78bfa; } .ticket.review { border-left-color: #8b5cf6; }
+  .ticket.inprogress { border-left-color: #3b82f6; }
+  .ticket.done { border-left-color: #22c55e; }
+  .ticket.open { border-left-color: #f59e0b; }
+  .ticket.review { border-left-color: #8b5cf6; }
+  .ticket.abandoned { border-left-color: #9ca3af; }
   .ticket-key { font-weight: 700; color: #2563eb; font-size: 0.72rem; white-space: nowrap; min-width: 75px; }
+  .ticket-key a { color: inherit; text-decoration: none; }
+  .ticket-key a:hover { text-decoration: underline; }
   .ticket-sum { flex: 1; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ticket-who { font-size: 0.7rem; color: #9ca3af; white-space: nowrap; }
   .pill { font-size: 0.65rem; padding: 2px 7px; border-radius: 99px; white-space: nowrap; font-weight: 600; }
-  .pill-blue { background: #dbeafe; color: #1d4ed8; } .pill-green { background: #dcfce7; color: #15803d; }
-  .pill-orange { background: #ffedd5; color: #c2410c; } .pill-red { background: #fee2e2; color: #b91c1c; }
-  .pill-gray { background: #f1f5f9; color: #475569; } .pill-purple { background: #ede9fe; color: #6d28d9; }
+  .pill-green { background: #dcfce7; color: #15803d; }
+  .pill-orange { background: #ffedd5; color: #c2410c; }
+  .pill-purple { background: #ede9fe; color: #6d28d9; }
   .alert { border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; margin-bottom: 10px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
+  .alert-icon { font-size: 1rem; flex-shrink: 0; }
   .alert-red { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
   .alert-yellow { background: #fefce8; border: 1px solid #fde68a; color: #78350f; }
   .alert-green { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
 """
 
 def h(text: str) -> str:
-    """HTML-escape a string."""
     return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
-def ticket_row(issue: dict, css_class: str) -> str:
+def format_who(name: str) -> str:
+    """Format 'First Last Name' → 'F. Last'"""
+    if not name or name == "Unassigned":
+        return "Unassigned"
+    parts = name.strip().split()
+    if len(parts) >= 2:
+        return f"{parts[0][0]}. {parts[-1]}"
+    return name
+
+def ticket_row(issue: dict, css_class: str, pill_text: str = None) -> str:
     key      = issue["key"]
     summary  = issue["fields"]["summary"]
     assignee = issue["fields"].get("assignee") or {}
-    who      = assignee.get("displayName", "Unassigned")
+    who      = format_who(assignee.get("displayName", "Unassigned"))
     jira_url = f"https://{JIRA_HOST}/browse/{key}"
+    right    = (
+        f'<span class="pill pill-green">{h(pill_text)}</span>' if pill_text
+        else f'<span class="ticket-who">{h(who)}</span>'
+    )
     return (
         f'<div class="ticket {css_class}">'
         f'<span class="ticket-key"><a href="{jira_url}" target="_blank">{h(key)}</a></span>'
         f'<span class="ticket-sum">{h(summary)}</span>'
-        f'<span class="ticket-who">{h(who)}</span>'
+        f'{right}'
         f'</div>'
     )
 
-def ticket_section(title: str, issues: list, css_class: str, limit: int = 8) -> str:
+def ticket_section(title: str, issues: list, css_class: str, limit: int = 6, pill: str = None) -> str:
     if not issues:
         return ""
-    rows = "".join(ticket_row(i, css_class) for i in issues[:limit])
-    more = f'<div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">+{len(issues)-limit} more</div>' if len(issues) > limit else ""
-    return f'<div class="section-title">{h(title)}</div><div class="ticket-list">{rows}{more}</div>'
+    rows = "".join(ticket_row(i, css_class, pill_text=(
+        i["fields"]["status"]["name"] if pill == "status" else pill
+    )) for i in issues[:limit])
+    more = (
+        f'<div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">+{len(issues)-limit} more</div>'
+        if len(issues) > limit else ""
+    )
+    return f'<div class="divider"></div><div class="section-title">{title}</div><div class="ticket-list">{rows}{more}</div>'
 
-def progress_bar(done: int, total: int) -> str:
+def stat_box(value: int, label: str, color: str, prev: int = None) -> str:
+    if prev is None:
+        delta_html = ""
+    elif value > prev:
+        delta_html = f'<div style="font-size:0.65rem;color:#16a34a;margin-top:2px;">+{value-prev} &uarr; (was {prev})</div>'
+    elif value < prev:
+        delta_html = f'<div style="font-size:0.65rem;color:#16a34a;margin-top:2px;">{value-prev} &darr; (was {prev})</div>'
+    else:
+        delta_html = f'<div style="font-size:0.65rem;color:#6b7280;margin-top:2px;">no change</div>'
+    return (
+        f'<div class="stat-box">'
+        f'<div class="num {color}">{value}</div>'
+        f'<div class="lbl">{h(label)}</div>'
+        f'{delta_html}'
+        f'</div>'
+    )
+
+def risk_badge(project: str, pct: int, in_prog: int) -> tuple:
+    """Returns (text, css_class)"""
+    if PROJECT_META[project]["mvp_label"]:
+        if pct >= 80:
+            return "&#x1F7E2; On Schedule", "badge-green"
+        elif pct >= 55:
+            return "&#x1F7E1; On Track", "badge-yellow"
+        else:
+            return "&#x1F534; At Risk", "badge-critical"
+    else:
+        if in_prog >= 5:
+            return "&#x1F7E2; Healthy", "badge-green"
+        elif in_prog > 0:
+            return "&#x1F7E1; On Track", "badge-yellow"
+        else:
+            return "&#x26AA; Slow", "badge-blue"
+
+def mvp_progress_bar(bar_label: str, done: int, total: int, prev_done: int = None, prev_total: int = None) -> str:
     pct   = round(done / total * 100) if total else 0
     color = "fill-green" if pct >= 70 else ("fill-orange" if pct >= 40 else "fill-red")
+    trend_color = "#d97706"
+    if prev_done is not None and prev_total is not None:
+        prev_pct = round(prev_done / prev_total * 100) if prev_total else 0
+        trend    = "&#x25B2;" if pct > prev_pct else ("&#x25BC;" if pct < prev_pct else "&#x2192;")
+        if pct > prev_pct:
+            trend_color = "#16a34a"
+        right = (
+            f'<div style="display:flex;gap:12px;align-items:center;">'
+            f'<span style="font-size:0.72rem;color:#6b7280;">Last week: <strong>{prev_pct}%</strong></span>'
+            f'<span style="font-weight:800;color:{trend_color};font-size:1rem;">This week: {pct}% {trend}</span>'
+            f'</div>'
+        )
+    else:
+        right = f'<span>{pct}% ({done}/{total})</span>'
     return (
         f'<div class="progress-wrap">'
-        f'<div class="progress-label"><span>Sprint Progress</span><span>{pct}% ({done}/{total})</span></div>'
+        f'<div class="progress-label"><span>{h(bar_label)}</span>{right}</div>'
         f'<div class="progress-bar"><div class="progress-fill {color}" style="width:{pct}%"></div></div>'
         f'</div>'
     )
 
-def project_card(project: str, issues: list) -> str:
+def project_card(project: str, issues: list, prev: dict = None, mvp_total: int = None, lookahead: list = None) -> str:
     meta    = PROJECT_META[project]
     buckets = bucket_issues(issues)
-    total   = len(issues)
     done    = len(buckets["done"])
-    blocked = len(buckets["blocked"])
     in_prog = len(buckets["inprogress"])
     in_rev  = len(buckets["review"])
+    open_   = len(buckets["open"])
+    aband   = len(buckets["abandoned"])
+    total   = done + in_prog + in_rev + open_ + aband
 
-    stats = (
-        f'<div class="stats">'
-        f'<div class="stat-box"><div class="num num-gray">{total}</div><div class="lbl">Total</div></div>'
-        f'<div class="stat-box"><div class="num num-blue">{in_prog}</div><div class="lbl">In Progress</div></div>'
-        f'<div class="stat-box"><div class="num num-green">{done}</div><div class="lbl">Done</div></div>'
-        f'<div class="stat-box"><div class="num num-red">{blocked}</div><div class="lbl">Blocked</div></div>'
-        f'</div>'
-    )
+    p = prev or {}
+    badge_text, badge_cls = risk_badge(project, round(done / (mvp_total or total) * 100) if (mvp_total or total) else 0, in_prog)
 
+    # Sub-header text
+    if meta["mvp_label"]:
+        mvp_name = "June MVP" if "JUNE" in active_mvp_label().upper() else "July MVP"
+        sub = meta["sub"].format(total=mvp_total or total, mvp_name=mvp_name)
+    else:
+        sub = meta["sub"]
+
+    # Stat boxes — LEF gets 5 (with In Review), LEM/LRF get 4 (In Review merged into In Progress)
+    if meta["mvp_label"]:
+        stats_html = (
+            f'<div class="stats">'
+            + stat_box(done,    meta["done_label"],  "num-green",  p.get("done"))
+            + stat_box(in_prog, "In Progress",        "num-blue",   p.get("inprogress"))
+            + stat_box(in_rev,  "In Review",          "num-blue",   p.get("review"))
+            + stat_box(open_,   meta["open_label"],   "num-orange", p.get("open"))
+            + stat_box(aband,   "Abandoned",          "num-gray",   p.get("abandoned"))
+            + f'</div>'
+        )
+    else:
+        combined_prog = in_prog + in_rev
+        prev_prog     = (p.get("inprogress", 0) or 0) + (p.get("review", 0) or 0) if p else None
+        stats_html = (
+            f'<div class="stats">'
+            + stat_box(done,         meta["done_label"],  "num-green",  p.get("done") if p else None)
+            + stat_box(combined_prog,"In Progress",        "num-blue",   prev_prog if p else None)
+            + stat_box(open_,        meta["open_label"],  "num-orange", p.get("open") if p else None)
+            + stat_box(aband,        "Abandoned",         "num-gray",   p.get("abandoned") if p else None)
+            + f'</div>'
+        )
+
+    # Progress bar
+    if meta["mvp_label"] and mvp_total:
+        prev_done  = p.get("done") if p else None
+        progress   = mvp_progress_bar(f"{mvp_name} Completion", done, mvp_total, prev_done, mvp_total)
+    elif not meta["mvp_label"] and total:
+        prev_done  = p.get("done") if p else None
+        progress   = mvp_progress_bar("Overall Completion", done, total, prev_done, p.get("total") if p else None)
+    else:
+        progress = ""
+
+    # Ticket sections — no "Open/Not Started" list; done items show pill
     body = ""
-    if blocked:
-        body += ticket_section("&#x1F6D1; Blocked", buckets["blocked"], "blocked")
-    body += ticket_section("In Progress", buckets["inprogress"], "inprogress")
-    body += ticket_section("In Review / Testing", buckets["review"], "review")
-    body += ticket_section("Completed This Sprint", buckets["done"], "done", limit=5)
-    body += ticket_section("Open / To Do", buckets["open"], "open", limit=5)
+    body += ticket_section("In Progress",           buckets["inprogress"], "inprogress")
+    body += ticket_section("In Review / Testing",   buckets["review"],     "done",      pill="status")
+
+    if meta["mvp_label"]:
+        body += ticket_section("&#x2705; Completed This Sprint", buckets["done"], "done", limit=6, pill="Done")
+        if lookahead:
+            lookahead_label = "July MVP" if active_mvp_label() == "JUNEMVP" else "Next MVP"
+            body += (
+                f'<div class="divider"></div>'
+                f'<div class="section-title" style="color:#7c3aed;">'
+                f'&#x1F52D; {h(lookahead_label)} Outlook</div>'
+                f'<div class="alert alert-yellow">'
+                f'<span class="alert-icon">&#x1F4CB;</span>'
+                f'<span><strong>{len(lookahead)} tickets tagged {lookahead_label}</strong> &mdash; '
+                f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "done")} done, '
+                f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "inprogress")} in progress.</span>'
+                f'</div>'
+            )
+    else:
+        body += ticket_section("&#x2705; Completed This Month", buckets["done"], "done", limit=6, pill="Done")
 
     return (
         f'<div class="card" style="border-top: 4px solid {meta["color"]}">'
         f'<div class="project-header">'
-        f'<span class="badge {meta["badge"]}">{h(meta["label"])}</span>'
-        f'<div><div class="project-name">{h(meta["label"])} <span style="font-weight:400;color:#6b7280;">&#xB7; {h(meta["desc"])}</span></div>'
-        f'<div class="project-sub">{total} tickets in active sprint</div></div>'
+        f'<div>'
+        f'<div class="project-name">{h(meta["label"])} <span style="font-weight:400;color:#6b7280;">&middot; {h(meta["desc"])}</span></div>'
+        f'<div class="project-sub">{sub}</div>'
         f'</div>'
-        f'{progress_bar(done, total)}'
-        f'{stats}'
+        f'<span class="badge {badge_cls}" style="margin-left:auto;">{badge_text}</span>'
+        f'</div>'
+        f'{stats_html}'
+        f'{progress}'
         f'{body}'
         f'</div>'
     )
 
+# ---------------------------------------------------------------------------
+# Week-over-week stats persistence
+# ---------------------------------------------------------------------------
+STATS_FILE = "stats.json"
+
+def load_stats() -> dict:
+    try:
+        with open(STATS_FILE) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_stats(slug: str, per_project: dict):
+    data = load_stats()
+    data[slug] = per_project
+    with open(STATS_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+def get_prev_stats(slug: str) -> dict:
+    """Return per-project bucket counts from the most recent previous run."""
+    data = load_stats()
+    dates = sorted(k for k in data if k != slug)
+    if not dates:
+        return {}
+    return data[dates[-1]]
+
 def summary_card(all_issues: dict) -> str:
     rows = ""
     for proj, issues in all_issues.items():
-        buckets = bucket_issues(issues)
-        total   = len(issues)
-        done    = len(buckets["done"])
-        blocked = len(buckets["blocked"])
-        in_prog = len(buckets["inprogress"])
-        pct     = round(done / total * 100) if total else 0
+        buckets  = bucket_issues(issues)
+        done     = len(buckets["done"])
+        in_prog  = len(buckets["inprogress"]) + len(buckets["review"])
+        aband    = len(buckets["abandoned"])
+        total    = sum(len(v) for v in buckets.values())
+        pct      = round(done / total * 100) if total else 0
         rows += (
             f'<tr style="border-bottom:1px solid #f0f2f5;">'
             f'<td style="padding:8px 12px;font-weight:700;color:#2563eb;">{h(proj)}</td>'
             f'<td style="padding:8px 12px;">{total}</td>'
             f'<td style="padding:8px 12px;color:#2563eb;">{in_prog}</td>'
             f'<td style="padding:8px 12px;color:#16a34a;">{done}</td>'
-            f'<td style="padding:8px 12px;color:#dc2626;">{blocked}</td>'
+            f'<td style="padding:8px 12px;color:#9ca3af;">{aband}</td>'
             f'<td style="padding:8px 12px;font-weight:700;">{pct}%</td>'
             f'</tr>'
         )
-
     return (
         f'<div class="card full" style="border-top: 4px solid #6366f1;">'
         f'<div class="section-title">Sprint Summary</div>'
@@ -298,7 +505,7 @@ def summary_card(all_issues: dict) -> str:
         f'<th style="padding:8px 12px;text-align:left;">Total</th>'
         f'<th style="padding:8px 12px;text-align:left;">In Progress</th>'
         f'<th style="padding:8px 12px;text-align:left;">Done</th>'
-        f'<th style="padding:8px 12px;text-align:left;">Blocked</th>'
+        f'<th style="padding:8px 12px;text-align:left;">Abandoned</th>'
         f'<th style="padding:8px 12px;text-align:left;">% Done</th>'
         f'</tr></thead>'
         f'<tbody>{rows}</tbody>'
@@ -306,11 +513,31 @@ def summary_card(all_issues: dict) -> str:
         f'</div>'
     )
 
-def render_html(all_issues: dict, date_str: str, today: datetime.date = None) -> str:
-    cards   = "\n".join(project_card(proj, all_issues[proj]) for proj in PROJECTS)
+def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
+                prev_stats: dict = None, mvp_totals: dict = None) -> str:
+    if today is None:
+        today = datetime.date.today()
+    label  = active_mvp_label(today)
+    boards = " &middot; ".join(PROJECTS)
+    prev_stats  = prev_stats  or {}
+    mvp_totals  = mvp_totals  or {}
+
+    lookahead_lef = []
+    if label == "JUNEMVP":
+        print("Fetching JULYMVP look-ahead for LEF...")
+        lookahead_lef = get_lookahead_issues("LEF", "JULYMVP")
+
+    def _card(proj):
+        p = prev_stats.get(proj)
+        return project_card(
+            proj, all_issues[proj],
+            prev=p,
+            mvp_total=mvp_totals.get(proj),
+            lookahead=lookahead_lef if proj == "LEF" else None,
+        )
+
+    cards   = "\n".join(_card(proj) for proj in PROJECTS)
     summary = summary_card(all_issues)
-    label   = active_mvp_label(today)
-    boards  = " &middot; ".join(PROJECTS)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -379,19 +606,44 @@ def main():
     date_str   = today.strftime("%B %-d, %Y")
     file_slug  = today.strftime("%y%m%d")
     filename   = f"{file_slug}_weekly_dashboard.html"
+    label      = active_mvp_label(today)
 
     print(f"Fetching Jira data for {', '.join(PROJECTS)} ...")
     all_issues = {}
     for proj in PROJECTS:
-        issues = get_active_sprint_issues(proj)
-        print(f"  {proj}: {len(issues)} issues")
-        all_issues[proj] = issues
+        all_issues[proj] = get_active_sprint_issues(proj)
 
-    html = render_html(all_issues, date_str, today)
+    # Fetch total MVP ticket count for LEF progress bar (all statuses)
+    mvp_totals: dict = {}
+    print(f"Fetching {label} total count for LEF...")
+    resp = jira_get("search/jql", {
+        "jql": f"project = LEF AND labels = {label}",
+        "startAt": 0, "maxResults": 0, "fields": "summary",
+    })
+    mvp_totals["LEF"] = resp.get("total", len(all_issues["LEF"]))
+    print(f"  LEF {label} total: {mvp_totals['LEF']}")
+
+    # Load previous week's stats for deltas
+    prev_stats = get_prev_stats(file_slug)
+
+    html = render_html(all_issues, date_str, today, prev_stats=prev_stats, mvp_totals=mvp_totals)
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"Generated {filename}")
+
+    # Save current stats for next week's deltas
+    current_stats = {}
+    for proj, issues in all_issues.items():
+        b = bucket_issues(issues)
+        current_stats[proj] = {
+            "done": len(b["done"]), "inprogress": len(b["inprogress"]),
+            "review": len(b["review"]), "open": len(b["open"]),
+            "abandoned": len(b["abandoned"]),
+            "total": sum(len(v) for v in b.values()),
+        }
+    save_stats(file_slug, current_stats)
+    print(f"Saved stats snapshot → {STATS_FILE}")
 
     update_index(filename, date_str)
 
