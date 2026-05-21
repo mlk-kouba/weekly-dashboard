@@ -757,6 +757,11 @@ def update_index(new_filename: str, date_str: str):
 
     new_entry = f'      <li><a href="{new_filename}">{h(date_str)} Weekly Dashboard</a></li>\n'
 
+    # If this file is already listed, don't add a duplicate
+    if new_filename in content:
+        print(f"{index_path} already contains {new_filename}, skipping duplicate entry")
+        return
+
     if "<ul>" in content:
         content = content.replace("<ul>", "<ul>\n" + new_entry, 1)
     else:
