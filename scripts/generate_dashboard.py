@@ -26,6 +26,11 @@ JIRA_TOKEN    = os.environ.get("JIRA_API_TOKEN", "")
 JIRA_HOST     = os.environ.get("JIRA_INSTANCE", "learningaz.atlassian.net")
 PROJECTS      = ["LEF", "LEM", "LRF"]
 
+def active_mvp_label(today: datetime.date = None) -> str:
+    """Return the current MVP label based on date. Switches to JULYMVP on July 1."""
+    d = today or datetime.date.today()
+    return "JULYMVP" if d >= datetime.date(d.year, 7, 1) else "JUNEMVP"
+
 PROJECT_META = {
     "LEF": {"label": "LEF", "desc": "Assessment / ReadingPowerZone / SoR", "color": "#dc2626", "badge": "badge-red",    "board": "scrum"},
     "LEM": {"label": "LEM", "desc": "External Users / Rostering / Auth",   "color": "#f59e0b", "badge": "badge-yellow", "board": "kanban"},
@@ -74,16 +79,18 @@ def jira_get(path: str, params: dict = None) -> dict:
         return {}
 
 def get_active_sprint_issues(project: str) -> list:
-    """Return issues for a project — sprint-based for scrum, prioritized backlog for kanban."""
+    """Return issues for a project — sprint-based for scrum, prioritized backlog for kanban.
+    Filters to the active MVP label (JUNEMVP before July, JULYMVP from July onward)."""
     board = PROJECT_META[project]["board"]
+    label = active_mvp_label()
     if board == "kanban":
         jql = (
-            f'project = {project} AND statusCategory != Done '
+            f'project = {project} AND statusCategory != Done AND labels = {label} '
             f'ORDER BY priority ASC, rank ASC'
         )
     else:
         jql = (
-            f'project = {project} AND sprint in openSprints() '
+            f'project = {project} AND sprint in openSprints() AND labels = {label} '
             f'ORDER BY status ASC, priority DESC'
         )
     issues = []
@@ -279,6 +286,7 @@ def summary_card(all_issues: dict) -> str:
 def render_html(all_issues: dict, date_str: str) -> str:
     cards   = "\n".join(project_card(proj, all_issues[proj]) for proj in PROJECTS)
     summary = summary_card(all_issues)
+    label   = active_mvp_label(today)
     boards  = " &middot; ".join(PROJECTS)
 
     return f"""<!DOCTYPE html>
@@ -295,7 +303,7 @@ def render_html(all_issues: dict, date_str: str) -> str:
 <header>
   <div>
     <h1>&#x1F4DA; Literacy Weekly Project Dashboard</h1>
-    <div style="font-size:0.85rem;opacity:0.85;margin-top:4px;">Boards: {boards}</div>
+    <div style="font-size:0.85rem;opacity:0.85;margin-top:4px;">Boards: {boards} &nbsp;&middot;&nbsp; Tracking: <strong>{label}</strong></div>
   </div>
   <div class="meta">
     <div>Week of {h(date_str)}</div>
