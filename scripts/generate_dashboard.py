@@ -111,21 +111,27 @@ def get_active_sprint_issues(project: str) -> list:
         if start >= data.get("total", 0):
             break
 
-    # Fallback for boards with no active sprint: show recently updated non-done items
+    # Fallback for boards with no active sprint: show in-progress + done this month
     if not issues and not meta["mvp_label"]:
-        print(f"  {project}: no active sprint found, falling back to recent non-done issues")
+        print(f"  {project}: no active sprint found, falling back to in-progress + done this month")
         fallback_jql = (
-            f'project = {project} AND statusCategory != Done '
-            f'ORDER BY updated DESC'
+            f'project = {project} AND ('
+            f'statusCategory != Done OR '
+            f'(statusCategory = Done AND updatedDate >= startOfMonth())'
+            f') ORDER BY status ASC, updated DESC'
         )
         data = jira_get("search/jql", {
             "jql":        fallback_jql,
             "startAt":    0,
-            "maxResults": 50,
+            "maxResults": 100,
             "fields":     "summary,status,assignee,priority,issuetype,labels",
         })
         issues = data.get("issues", [])
 
+    print(f"  {project}: {len(issues)} issues")
+    if issues:
+        statuses = sorted(set(i["fields"]["status"]["name"] for i in issues))
+        print(f"  {project} statuses found: {', '.join(statuses)}")
     return issues
 
 def classify_status(raw_status: str) -> str:
