@@ -276,7 +276,7 @@ def render_html(all_issues: dict, date_str: str) -> str:
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Engineering Weekly Status &mdash; {h(date_str)}</title>
+<title>Literacy Weekly Project Dashboard &mdash; {h(date_str)}</title>
 <style>
 {CSS}
 </style>
@@ -284,7 +284,7 @@ def render_html(all_issues: dict, date_str: str) -> str:
 <body>
 <header>
   <div>
-    <h1>&#x2699;&#xFE0F; Engineering Weekly Status</h1>
+    <h1>&#x1F4DA; Literacy Weekly Project Dashboard</h1>
     <div style="font-size:0.85rem;opacity:0.85;margin-top:4px;">Boards: {boards}</div>
   </div>
   <div class="meta">
