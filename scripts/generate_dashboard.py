@@ -27,9 +27,9 @@ JIRA_HOST     = os.environ.get("JIRA_INSTANCE", "learningaz.atlassian.net")
 PROJECTS      = ["LEF", "LEM", "LRF"]
 
 PROJECT_META = {
-    "LEF": {"label": "LEF", "desc": "Assessment / ReadingPowerZone / SoR", "color": "#dc2626", "badge": "badge-red"},
-    "LEM": {"label": "LEM", "desc": "External Users / Rostering / Auth",   "color": "#f59e0b", "badge": "badge-yellow"},
-    "LRF": {"label": "LRF", "desc": "Platform / Infrastructure / NG",      "color": "#22c55e", "badge": "badge-green"},
+    "LEF": {"label": "LEF", "desc": "Assessment / ReadingPowerZone / SoR", "color": "#dc2626", "badge": "badge-red",    "board": "scrum"},
+    "LEM": {"label": "LEM", "desc": "External Users / Rostering / Auth",   "color": "#f59e0b", "badge": "badge-yellow", "board": "kanban"},
+    "LRF": {"label": "LRF", "desc": "Platform / Infrastructure / NG",      "color": "#22c55e", "badge": "badge-green",  "board": "scrum"},
 }
 
 STATUS_MAP = {
@@ -74,8 +74,18 @@ def jira_get(path: str, params: dict = None) -> dict:
         return {}
 
 def get_active_sprint_issues(project: str) -> list:
-    """Return all issues in the active sprint for a project, batched."""
-    jql    = f'project = {project} AND sprint in openSprints() ORDER BY status ASC, priority DESC'
+    """Return issues for a project — sprint-based for scrum, prioritized backlog for kanban."""
+    board = PROJECT_META[project]["board"]
+    if board == "kanban":
+        jql = (
+            f'project = {project} AND statusCategory != Done '
+            f'ORDER BY priority ASC, rank ASC'
+        )
+    else:
+        jql = (
+            f'project = {project} AND sprint in openSprints() '
+            f'ORDER BY status ASC, priority DESC'
+        )
     issues = []
     start  = 0
     while True:
@@ -221,7 +231,7 @@ def project_card(project: str, issues: list) -> str:
         f'<div class="project-header">'
         f'<span class="badge {meta["badge"]}">{h(meta["label"])}</span>'
         f'<div><div class="project-name">{h(meta["label"])} <span style="font-weight:400;color:#6b7280;">&#xB7; {h(meta["desc"])}</span></div>'
-        f'<div class="project-sub">{total} tickets in active sprint</div></div>'
+        f'<div class="project-sub">{total} {"prioritized items" if meta["board"] == "kanban" else "tickets in active sprint"}</div></div>'
         f'</div>'
         f'{progress_bar(done, total)}'
         f'{stats}'
@@ -312,11 +322,13 @@ def update_index(new_filename: str, date_str: str):
         content = ""
 
     new_entry = f'      <li><a href="{new_filename}">{h(date_str)} Weekly Dashboard</a></li>\n'
+
+    if "<ul>" in content:
         content = content.replace("<ul>", "<ul>\n" + new_entry, 1)
     else:
         content = (
             "<!doctype html>\n<html lang='en'>\n<head><meta charset='utf-8'/>"
-            "<title>Weekly Dashboard</title></head>\n<body>\n<h1>Weekly Dashboard</h1>\n"
+            "<title>Literacy Weekly Project Dashboard</title></head>\n<body>\n<h1>Literacy Weekly Project Dashboard</h1>\n"
             f"<ul>\n{new_entry}</ul>\n</body>\n</html>\n"
         )
 
