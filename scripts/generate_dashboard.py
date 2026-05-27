@@ -504,13 +504,13 @@ def save_stats(slug: str, per_project: dict):
     with open(STATS_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
-def get_prev_stats(slug: str) -> dict:
-    """Return per-project bucket counts from the most recent previous run."""
+def get_prev_stats(slug: str) -> tuple:
+    """Return (prev_slug, per-project bucket counts) from the most recent previous run."""
     data = load_stats()
     dates = sorted(k for k in data if k != slug)
     if not dates:
-        return {}
-    return data[dates[-1]]
+        return None, {}
+    return dates[-1], data[dates[-1]]
 
 def actions_card(all_issues: dict, mvp_total: int, lookahead: list) -> str:
     lef_b   = bucket_issues(all_issues["LEF"])
@@ -585,16 +585,11 @@ def roadmap_card() -> str:
         f'</div>'
     )
 
-def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_total: int) -> str:
-    if not prev_stats:
+def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_total: int, prev_slug: str = None) -> str:
+    if not prev_stats or not prev_slug:
         return ""
 
-    prev_dates = sorted(prev_stats.keys())
-    prev_slug  = prev_dates[-1] if prev_dates else None
-    if not prev_slug:
-        return ""
-
-    # Format prev date slug YYMMDD → "May 14"
+    # Format prev date slug YYMMDD → "May 21"
     try:
         prev_dt   = datetime.datetime.strptime(prev_slug, "%y%m%d")
         prev_label = prev_dt.strftime("%B %-d")
@@ -682,7 +677,7 @@ def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_tot
     )
 
 def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
-                prev_stats: dict = None, mvp_totals: dict = None) -> str:
+                prev_stats: dict = None, prev_slug: str = None, mvp_totals: dict = None) -> str:
     if today is None:
         today = datetime.date.today()
     label  = active_mvp_label(today)
@@ -708,7 +703,7 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
     cards      = "\n".join(_card(proj) for proj in PROJECTS)
     lef_mvp    = mvp_totals.get("LEF", 0)
     bottom_row = actions_card(all_issues, lef_mvp, lookahead_lef) + "\n" + roadmap_card()
-    wow        = what_changed_card(date_str, all_issues, prev_stats, lef_mvp)
+    wow        = what_changed_card(date_str, all_issues, prev_stats, lef_mvp, prev_slug=prev_slug)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -813,9 +808,9 @@ def main():
     print(f"  LEM backlog total: {mvp_totals['LEM_backlog']}")
 
     # Load previous week's stats for deltas
-    prev_stats = get_prev_stats(file_slug)
+    prev_slug, prev_stats = get_prev_stats(file_slug)
 
-    html = render_html(all_issues, date_str, today, prev_stats=prev_stats, mvp_totals=mvp_totals)
+    html = render_html(all_issues, date_str, today, prev_stats=prev_stats, prev_slug=prev_slug, mvp_totals=mvp_totals)
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write(html)
@@ -838,3 +833,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
