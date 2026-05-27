@@ -27,24 +27,24 @@
   },
   "260527": {
     "LEF": {
-      "done": 45,
+      "done": 48,
       "inprogress": 5,
-      "review": 4,
+      "review": 1,
       "open": 5,
       "abandoned": 5,
       "total": 64
     },
     "LEM": {
-      "done": 36,
-      "inprogress": 4,
+      "done": 37,
+      "inprogress": 3,
       "review": 1,
       "open": 53,
       "abandoned": 6,
       "total": 100
     },
     "LRF": {
-      "done": 23,
-      "inprogress": 3,
+      "done": 24,
+      "inprogress": 2,
       "review": 0,
       "open": 44,
       "abandoned": 4,
