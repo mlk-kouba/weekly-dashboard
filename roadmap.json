@@ -1,8 +1,8 @@
 [
-  {"month": "June",   "items": "Assessment/RPZ/SoR (LEF), Intercom Pt.1, TAL China, Admin Reports",             "pill": "pill-red"},
-  {"month": "July",   "items": "Mobile RPZ (iOS/Android), Teacher Guides, Engagement Activities, Passage Search","pill": "pill-purple"},
-  {"month": "August", "items": "Readium CMS Features, EL/LAZ Correlations",                                     "pill": "pill-gray"},
-  {"month": "Sept",   "items": "TAL China (pt.2), CAI iLearn Enhancements",                                     "pill": "pill-gray"},
-  {"month": "Oct",    "items": "SITN, Content Refinement",                                                       "pill": "pill-gray"},
-  {"month": "Dec",    "items": "NWEA API Upgrade, Intercom Pt.2 (TBD), Español/ELL (decision pending)",         "pill": "pill-gray"}
+  {"month": "June ✅",  "items": "Assessment/RPZ/SoR (LEF), Intercom Pt.1, TAL China, Admin Reports — DELIVERED June 3", "pill": "pill-green"},
+  {"month": "July",     "items": "Mobile RPZ (iOS/Android), Teacher Guides, Resource Finder — code freeze June 24",      "pill": "pill-purple"},
+  {"month": "August",   "items": "Readium CMS Features, EL/LAZ Correlations, Student Engagement Activities (deferred)",  "pill": "pill-gray"},
+  {"month": "Sept",     "items": "TAL China (pt.2), CAI iLearn Enhancements",                                            "pill": "pill-gray"},
+  {"month": "Oct",      "items": "SITN, Content Refinement",                                                             "pill": "pill-gray"},
+  {"month": "Dec",      "items": "NWEA API Upgrade, Intercom Pt.2 (TBD), Español/ELL (decision pending)",               "pill": "pill-gray"}
 ]

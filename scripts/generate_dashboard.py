@@ -26,10 +26,48 @@ JIRA_TOKEN    = os.environ.get("JIRA_API_TOKEN", "")
 JIRA_HOST     = os.environ.get("JIRA_INSTANCE", "learningaz.atlassian.net")
 PROJECTS      = ["LEF", "LEM", "LRF"]
 
-def active_mvp_label(today: datetime.date = None) -> str:
-    """Return the current MVP label based on date. Switches to JULYMVP on July 1."""
+def _first_wednesday(year: int, month: int) -> datetime.date:
+    """Return the first Wednesday of the given month."""
+    d = datetime.date(year, month, 1)
+    offset = (2 - d.weekday()) % 7   # Wednesday = weekday() == 2
+    return d + datetime.timedelta(days=offset)
+
+def _release_schedule(today: datetime.date) -> list:
+    """Return list of (release_date, freeze_date, label) for the next 12 months."""
+    schedule = []
+    for delta in range(12):
+        total_months = today.month - 1 + delta
+        year  = today.year + total_months // 12
+        month = total_months % 12 + 1
+        release = _first_wednesday(year, month)
+        # freeze is always 7 calendar days before release
+        freeze  = release - datetime.timedelta(days=7)
+        label   = release.strftime("%B").upper() + "MVP"
+        schedule.append((release, freeze, label))
+    return schedule
+
+def next_release_info(today: datetime.date = None) -> dict:
+    """Return a dict describing the next upcoming release (the one we're building toward)."""
     d = today or datetime.date.today()
-    return "JULYMVP" if d >= datetime.date(d.year, 7, 1) else "JUNEMVP"
+    for release, freeze, label in _release_schedule(d):
+        if release >= d:
+            dtf = (freeze - d).days
+            return {
+                "release": release,
+                "freeze":  freeze,
+                "label":   label,
+                "display": release.strftime("%B") + " MVP",
+                "release_str": release.strftime("%B %-d, %Y"),
+                "freeze_str":  freeze.strftime("%B %-d, %Y"),
+                "days_to_freeze": dtf,
+            }
+    return {}
+
+def active_mvp_label(today: datetime.date = None) -> str:
+    """Return the MVP label for the next upcoming release — auto-advances after each release date."""
+    d = today or datetime.date.today()
+    info = next_release_info(d)
+    return info.get("label", "MVP")
 
 PROJECT_META = {
     "LEF": {
@@ -283,7 +321,52 @@ CSS = """
   .change-down { background: #fee2e2; color: #b91c1c; }
   .change-new  { background: #ede9fe; color: #6d28d9; }
   .change-flat { background: #f1f5f9; color: #64748b; }
+"""  # NOTE: RELEASE_BANNER_CSS is appended in render_html via CSS + RELEASE_BANNER_CSS
+
+RELEASE_BANNER_CSS = """
+  .release-banner { background: white; border-radius: 10px; padding: 12px 22px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    border-left: 5px solid #f59e0b; flex-wrap: wrap; }
+  .rb-block { display: flex; flex-direction: column; }
+  .rb-label { font-size: 0.68rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; }
+  .rb-val   { font-size: 1.05rem; font-weight: 800; color: #1a1a2e; line-height: 1.3; }
+  .rb-sep   { height: 36px; width: 1px; background: #e2e8f0; flex-shrink: 0; }
+  .freeze-chip { font-size: 0.82rem; font-weight: 700; padding: 5px 14px; border-radius: 99px; }
+  .fc-urgent { background: #fee2e2; color: #991b1b; }
+  .fc-warn   { background: #fef9c3; color: #92400e; }
+  .fc-ok     { background: #dcfce7; color: #15803d; }
 """
+
+def release_banner_html(info: dict) -> str:
+    """Render the top-of-page next-release banner."""
+    if not info:
+        return ""
+    dtf = info["days_to_freeze"]
+    if dtf < 0:
+        chip_cls, chip_txt = "fc-urgent", "Freeze passed"
+    elif dtf == 0:
+        chip_cls, chip_txt = "fc-urgent", "Freeze TODAY"
+    elif dtf <= 5:
+        chip_cls, chip_txt = "fc-urgent", f"{dtf} day{'s' if dtf != 1 else ''} to freeze &#x1F6A8;"
+    elif dtf <= 14:
+        chip_cls, chip_txt = "fc-warn", f"{dtf} days to freeze"
+    else:
+        chip_cls, chip_txt = "fc-ok", f"{dtf} days to freeze"
+    return (
+        f'<div class="release-banner">'
+        f'<div class="rb-block"><div class="rb-label">Next Release</div>'
+        f'<div class="rb-val">{h(info["release_str"])}</div></div>'
+        f'<div class="rb-sep"></div>'
+        f'<div class="rb-block"><div class="rb-label">Code Freeze</div>'
+        f'<div class="rb-val" style="color:#dc2626;">{h(info["freeze_str"])}</div></div>'
+        f'<div class="rb-sep"></div>'
+        f'<div class="rb-block"><div class="rb-label">Tracking</div>'
+        f'<div class="rb-val">{h(info["display"])}</div></div>'
+        f'<div style="margin-left:auto;">'
+        f'<span class="freeze-chip {chip_cls}">{chip_txt}</span>'
+        f'</div>'
+        f'</div>'
+    )
 
 def h(text: str) -> str:
     return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
@@ -680,8 +763,10 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
                 prev_stats: dict = None, prev_slug: str = None, mvp_totals: dict = None) -> str:
     if today is None:
         today = datetime.date.today()
-    label  = active_mvp_label(today)
-    boards = " &middot; ".join(PROJECTS)
+    label     = active_mvp_label(today)
+    rel_info  = next_release_info(today)
+    banner    = release_banner_html(rel_info)
+    boards    = " &middot; ".join(PROJECTS)
     prev_stats  = prev_stats  or {}
     mvp_totals  = mvp_totals  or {}
 
@@ -712,20 +797,22 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Literacy Weekly Project Dashboard &mdash; {h(date_str)}</title>
 <style>
-{CSS}
+{CSS + RELEASE_BANNER_CSS}
 </style>
 </head>
 <body>
 <header>
   <div>
     <h1>&#x1F4DA; Literacy Weekly Project Dashboard</h1>
-    <div style="font-size:0.85rem;opacity:0.85;margin-top:4px;">Boards: {boards} &nbsp;&middot;&nbsp; Tracking: <strong>{label}</strong></div>
+    <div style="font-size:0.85rem;opacity:0.85;margin-top:4px;">Boards: {boards} &nbsp;&middot;&nbsp; Tracking: <strong>{h(rel_info.get("display", label))}</strong></div>
   </div>
   <div class="meta">
     <div>Week of {h(date_str)}</div>
     <div>Auto-generated from Jira</div>
   </div>
 </header>
+
+{banner}
 
 <div class="grid">
 {cards}
