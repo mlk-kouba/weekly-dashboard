@@ -1,185 +1,28 @@
 {
-  "260521": {
+  "260610": {
     "LEF": {
-      "done": 41,
-      "inprogress": 13,
-      "review": 3,
-      "open": 3,
-      "abandoned": 3,
-      "total": 63
-    },
-    "LEM": {
-      "done": 33,
-      "inprogress": 4,
-      "review": 2,
-      "open": 55,
-      "abandoned": 6,
-      "total": 100
-    },
-    "LRF": {
-      "done": 19,
-      "inprogress": 5,
+      "done": 0,
+      "inprogress": 0,
       "review": 0,
-      "open": 44,
-      "abandoned": 4,
-      "total": 72
-    }
-  },
-  "260527": {
-    "LEF": {
-      "done": 48,
-      "inprogress": 5,
-      "review": 1,
-      "open": 5,
-      "abandoned": 5,
-      "total": 64
-    },
-    "LEM": {
-      "done": 37,
-      "inprogress": 3,
-      "review": 1,
-      "open": 53,
-      "abandoned": 6,
-      "total": 100
-    },
-    "LRF": {
-      "done": 24,
-      "inprogress": 2,
-      "review": 0,
-      "open": 44,
-      "abandoned": 4,
-      "total": 74
-    }
-  },
-  "260603": {
-    "LEF": {
-      "done": 51,
-      "inprogress": 3,
-      "review": 4,
-      "open": 3,
-      "abandoned": 5,
-      "total": 66
-    },
-    "LEM": {
-      "done": 1,
-      "inprogress": 4,
-      "review": 0,
-      "open": 95,
+      "open": 0,
       "abandoned": 0,
-      "total": 100
-    },
-    "LRF": {
-      "done": 1,
-      "inprogress": 5,
-      "review": 0,
-      "open": 44,
-      "abandoned": 0,
-      "total": 50
-    }
-  },
-  "260604": {
-    "LEF": {
-      "done": 19,
-      "inprogress": 6,
-      "review": 2,
-      "open": 77,
-      "abandoned": 3,
-      "total": 104,
-      "note": "First JulyMVP tracking week — 104 total tickets, code freeze June 24"
+      "total": 0
     },
     "LEM": {
-      "done": 1,
-      "inprogress": 4,
+      "done": 0,
+      "inprogress": 0,
       "review": 0,
-      "open": 95,
+      "open": 0,
       "abandoned": 0,
-      "total": 100
+      "total": 0
     },
     "LRF": {
-      "done": 78,
-      "inprogress": 5,
+      "done": 0,
+      "inprogress": 0,
       "review": 0,
-      "open": 10,
-      "abandoned": 9,
-      "total": 102
-    }
-  }
-}
-    "LEF": {
-      "done": 41,
-      "inprogress": 13,
-      "review": 3,
-      "open": 3,
-      "abandoned": 3,
-      "total": 63
-    },
-    "LEM": {
-      "done": 33,
-      "inprogress": 4,
-      "review": 2,
-      "open": 55,
-      "abandoned": 6,
-      "total": 100
-    },
-    "LRF": {
-      "done": 19,
-      "inprogress": 5,
-      "review": 0,
-      "open": 44,
-      "abandoned": 4,
-      "total": 72
-    }
-  },
-  "260527": {
-    "LEF": {
-      "done": 48,
-      "inprogress": 5,
-      "review": 1,
-      "open": 5,
-      "abandoned": 5,
-      "total": 64
-    },
-    "LEM": {
-      "done": 37,
-      "inprogress": 3,
-      "review": 1,
-      "open": 53,
-      "abandoned": 6,
-      "total": 100
-    },
-    "LRF": {
-      "done": 24,
-      "inprogress": 2,
-      "review": 0,
-      "open": 44,
-      "abandoned": 4,
-      "total": 74
-    }
-  },
-  "260603": {
-    "LEF": {
-      "done": 51,
-      "inprogress": 3,
-      "review": 4,
-      "open": 3,
-      "abandoned": 5,
-      "total": 66
-    },
-    "LEM": {
-      "done": 1,
-      "inprogress": 4,
-      "review": 0,
-      "open": 95,
+      "open": 0,
       "abandoned": 0,
-      "total": 100
-    },
-    "LRF": {
-      "done": 1,
-      "inprogress": 5,
-      "review": 0,
-      "open": 44,
-      "abandoned": 0,
-      "total": 50
+      "total": 0
     }
   }
 }
