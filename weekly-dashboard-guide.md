@@ -15,8 +15,9 @@ Update the weekly engineering dashboard for the week of [DATE].
 Boards: LEF · LEM · LRF
 
 Labels:
-- LEF June MVP items → label = JuneMVP
-- LEF July MVP items → label = JulyMVP
+- LEF active release items → label = `JULYMVP`
+- LEF look-ahead release count → label = `AugustPrio`
+- LEF mobile tracker → label = `Mobile`
 
 Section titles:
 - LEF  → "Assessment / ReadingPowerZone / SoR"
@@ -32,8 +33,11 @@ For each board include:
   - Any alerts or risks
 
 For LEF specifically:
-  - Show June MVP status (% done, tickets in flight, unstarted risk count)
-  - Show July MVP outlook (total count, staffing gaps, teacher guide progress)
+  - Keep the primary board focused on `JULYMVP`
+  - Show July release status (% done, tickets in flight, unstarted risk count)
+  - Show overall LEF done count across the whole board
+  - Show the `AugustPrio` tagged count as look-ahead
+  - Track `Mobile` labelled tickets separately
 
 For LEM:
   - Show active sprint items
@@ -57,7 +61,7 @@ Save as yymmdd-weekly-dashboard.html in C:/Users/mkouba/weekly-project-dashboard
 
 | Board | Key | Jira Label (MVP) | Title in Dashboard |
 |-------|-----|------------------|--------------------|
-| LEF   | LEF | `JuneMVP` / `JulyMVP` | Assessment / ReadingPowerZone / SoR |
+| LEF   | LEF | `JULYMVP` + `AugustPrio` look-ahead | Assessment / ReadingPowerZone / SoR |
 | LEM   | LEM | n/a (sprint-based) | Maintenance |
 | LRF   | LRF | n/a | Literacy Integration |
 
@@ -70,8 +74,9 @@ Save as yymmdd-weekly-dashboard.html in C:/Users/mkouba/weekly-project-dashboard
 
 Pull up the previous week's file from this folder and compare:
 
-- [ ] LEF June MVP % done (target: steady progress toward 100% by end of May)
-- [ ] LEF July MVP: are unassigned mobile tickets getting owners?
+- [ ] LEF July MVP % done and in-flight count
+- [ ] LEF AugustPrio count for look-ahead planning
+- [ ] LEF mobile tickets: are unassigned items getting owners?
 - [ ] LEM: were last week's flagged risks resolved?
 - [ ] LRF: overall completion % trending up
 - [ ] Any new blocked / abandoned tickets added?
@@ -87,6 +92,8 @@ Examples:
 - `260506-weekly-dashboard.html` — May 6, 2026
 - `260514-weekly-dashboard.html` — May 14, 2026
 - `260521-weekly-dashboard.html` — May 21, 2026
+
+For a missed Wednesday, run the workflow manually with the `dashboard_date` input set to the desired week, for example `2026-06-10`.
 
 ---
 

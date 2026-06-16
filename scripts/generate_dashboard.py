@@ -13,6 +13,7 @@ import os
 import sys
 import json
 import base64
+import re
 import datetime
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError, URLError
@@ -25,6 +26,33 @@ JIRA_EMAIL    = os.environ.get("JIRA_EMAIL", "")
 JIRA_TOKEN    = os.environ.get("JIRA_API_TOKEN", "")
 JIRA_HOST     = os.environ.get("JIRA_INSTANCE", "learningaz.atlassian.net")
 PROJECTS      = ["LEF", "LEM", "LRF"]
+DATE_OVERRIDE = os.environ.get("DASHBOARD_DATE", "").strip()
+LEF_ACTIVE_LABEL = os.environ.get("LEF_ACTIVE_LABEL", "JULYMVP")
+LEF_LOOKAHEAD_LABELS = {"AugustPrio": "August Priority"}
+LEF_MOBILE_LABEL = os.environ.get("LEF_MOBILE_LABEL", "Mobile")
+
+
+class JiraQueryError(RuntimeError):
+    """Raised when Jira cannot be queried reliably enough to build the dashboard."""
+
+
+def parse_dashboard_date(raw: str = "") -> datetime.date:
+    if not raw:
+        return datetime.date.today()
+    try:
+        return datetime.date.fromisoformat(raw)
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid DASHBOARD_DATE '{raw}'. Expected YYYY-MM-DD, for example 2026-06-10."
+        ) from exc
+
+
+def release_label_display(label: str) -> str:
+    if label in LEF_LOOKAHEAD_LABELS:
+        return LEF_LOOKAHEAD_LABELS[label]
+    if label.endswith("MVP"):
+        return f"{label[:-3].title()} MVP"
+    return label
 
 def _first_wednesday(year: int, month: int) -> datetime.date:
     """Return the first Wednesday of the given month."""
@@ -64,10 +92,8 @@ def next_release_info(today: datetime.date = None) -> dict:
     return {}
 
 def active_mvp_label(today: datetime.date = None) -> str:
-    """Return the MVP label for the next upcoming release — auto-advances after each release date."""
-    d = today or datetime.date.today()
-    info = next_release_info(d)
-    return info.get("label", "MVP")
+    """Return the active LEF release label."""
+    return LEF_ACTIVE_LABEL
 
 PROJECT_META = {
     "LEF": {
@@ -155,20 +181,41 @@ def jira_get(path: str, params: dict = None) -> dict:
     req = Request(url, headers=_auth_header())
     try:
         with urlopen(req, timeout=30) as resp:
-            return json.loads(resp.read().decode())
+            data = json.loads(resp.read().decode())
+            if isinstance(data, dict) and data.get("errorMessages"):
+                raise JiraQueryError(f"Jira query failed for {url}: {'; '.join(data['errorMessages'])}")
+            return data
     except HTTPError as e:
-        print(f"HTTP {e.code} calling {url}: {e.read().decode()}", file=sys.stderr)
-        return {}
+        raise JiraQueryError(f"HTTP {e.code} calling {url}: {e.read().decode()}") from e
     except URLError as e:
-        print(f"URL error calling {url}: {e.reason}", file=sys.stderr)
-        return {}
+        raise JiraQueryError(f"URL error calling {url}: {e.reason}") from e
 
-def get_active_sprint_issues(project: str) -> list:
+
+def jira_total(jql: str) -> int:
+    data = jira_get("search/jql", {
+        "jql": jql,
+        "startAt": 0,
+        "maxResults": 1,
+        "fields": "summary",
+    })
+    return data.get("total", 0)
+
+
+def validate_jira_access():
+    me = jira_get("myself")
+    if not me.get("accountId"):
+        raise JiraQueryError(
+            "Jira authentication succeeded without an account identity. "
+            "Verify the JIRA_EMAIL and JIRA_API_TOKEN secrets."
+        )
+
+def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
     """Return issues for a project.
     LEF: all JUNEMVP/JULYMVP tickets across ALL sprints (Done = all MVP done tickets).
     LEM and LRF: all not-done tickets + done tickets updated this month (Done = done this month)."""
+    d     = today or datetime.date.today()
     meta  = PROJECT_META[project]
-    label = active_mvp_label()
+    label = active_mvp_label(d)
     if meta["mvp_label"]:
         # LEF: no sprint filter — all MVP-labelled tickets so done in closed sprints are counted
         jql = (
@@ -176,12 +223,14 @@ def get_active_sprint_issues(project: str) -> list:
             f'ORDER BY status ASC, priority DESC'
         )
     else:
-        # LEM/LRF: active tickets updated this year + done this month
-        # updatedDate >= startOfYear() filters out stale tickets from prior years
+        # LEM/LRF: active tickets updated this year + done tickets updated in the target month.
+        year_start = datetime.date(d.year, 1, 1).strftime("%Y-%m-%d")
+        month_start = d.replace(day=1).strftime("%Y-%m-%d")
+        day_after = (d + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         jql = (
             f'project = {project} AND issuetype != Sub-task AND ('
-            f'(statusCategory != Done AND updatedDate >= startOfYear()) OR '
-            f'(statusCategory = Done AND updatedDate >= startOfMonth())'
+            f'(statusCategory != Done AND updatedDate >= "{year_start}" AND updatedDate < "{day_after}") OR '
+            f'(statusCategory = Done AND updatedDate >= "{month_start}" AND updatedDate < "{day_after}")'
             f') ORDER BY status ASC, updated DESC'
         )
     issues = []
@@ -207,21 +256,40 @@ def get_active_sprint_issues(project: str) -> list:
         print(f"  {project} statuses found: {', '.join(statuses)}")
     return issues
 
-def get_lookahead_issues(project: str, label: str) -> list:
-    """Return not-done issues tagged with the upcoming MVP label for look-ahead display."""
-    jql = (
-        f'project = {project} AND labels = {label} AND issuetype != Sub-task AND statusCategory != Done '
-        f'ORDER BY priority DESC, updated DESC'
-    )
+def fetch_lef_label_counts() -> dict:
+    counts = {}
+    for label in [LEF_ACTIVE_LABEL, *LEF_LOOKAHEAD_LABELS.keys()]:
+        total = jira_total(f"project = LEF AND labels = {label} AND issuetype != Sub-task")
+        counts[label] = total
+        print(f"  LEF {label} total: {total}")
+    return counts
+
+
+def fetch_lef_mobile_issues() -> list:
     data = jira_get("search/jql", {
-        "jql":        jql,
-        "startAt":    0,
-        "maxResults": 50,
-        "fields":     "summary,status,assignee,priority,issuetype,labels",
+        "jql": f'project = LEF AND labels = {LEF_MOBILE_LABEL} AND issuetype != Sub-task ORDER BY status ASC, priority DESC',
+        "startAt": 0,
+        "maxResults": 100,
+        "fields": "summary,status,assignee,priority,issuetype,labels",
     })
     issues = data.get("issues", [])
-    print(f"  {project} look-ahead ({label}): {len(issues)} issues")
+    print(f"  LEF Mobile total: {len(issues)} issues")
     return issues
+
+
+def validate_issue_counts(all_issues: dict, prev_stats: dict):
+    suspicious = []
+    for proj in PROJECTS:
+        prev_total = (prev_stats.get(proj) or {}).get("total", 0)
+        curr_total = len(all_issues.get(proj, []))
+        if prev_total > 0 and curr_total == 0:
+            suspicious.append(proj)
+    if suspicious:
+        raise JiraQueryError(
+            "Refusing to publish a blank board snapshot. "
+            f"The following projects dropped from non-zero last week to zero now: {', '.join(suspicious)}. "
+            "Verify the JIRA_EMAIL and JIRA_API_TOKEN secrets and confirm that the service account can browse those projects."
+        )
 
 def classify_status(raw_status: str, status_category_key: str = "") -> str:
     """STATUS_MAP always wins for known statuses; fall back to Jira statusCategory for unknowns."""
@@ -469,7 +537,8 @@ def mvp_progress_bar(bar_label: str, done: int, total: int, prev_done: int = Non
     )
 
 def project_card(project: str, issues: list, prev: dict = None, mvp_total: int = None,
-                 lookahead: list = None, backlog_total: int = None) -> str:
+                 lookahead_counts: dict = None, backlog_total: int = None,
+                 overall_done: int = None, mobile_issues: list = None) -> str:
     meta    = PROJECT_META[project]
     buckets = bucket_issues(issues)
     done    = len(buckets["done"])
@@ -484,8 +553,10 @@ def project_card(project: str, issues: list, prev: dict = None, mvp_total: int =
 
     # Sub-header text
     if meta["mvp_label"]:
-        mvp_name = "June MVP" if "JUNE" in active_mvp_label().upper() else "July MVP"
+        mvp_name = release_label_display(active_mvp_label())
         sub = meta["sub"].format(total=mvp_total or total, mvp_name=mvp_name)
+        if overall_done is not None:
+            sub += f' &middot; <span style="color:#475569;font-weight:600;">{overall_done} total LEF done</span>'
     elif "{backlog}" in meta["sub"]:
         sub = meta["sub"].format(backlog=backlog_total if backlog_total is not None else total)
     else:
@@ -540,18 +611,37 @@ def project_card(project: str, issues: list, prev: dict = None, mvp_total: int =
 
     body += ticket_section(meta["completed_label"], buckets["done"], "done", limit=6, pill="Done")
 
-    if meta["mvp_label"] and lookahead:
-        lookahead_label = "July MVP" if active_mvp_label() == "JUNEMVP" else "Next MVP"
+    if meta["mvp_label"] and mobile_issues:
+        mobile_b = bucket_issues(mobile_issues)
+        body += (
+            f'<div class="divider"></div>'
+            f'<div class="section-title" style="color:#1d4ed8;">&#x1F4F1; Mobile Tracker</div>'
+            f'<div class="alert alert-yellow">'
+            f'<span class="alert-icon">&#x1F4CB;</span>'
+            f'<span><strong>{len(mobile_issues)} Mobile-labelled tickets</strong> &mdash; '
+            f'{len(mobile_b["done"])} done, '
+            f'{len(mobile_b["inprogress"]) + len(mobile_b["review"])} active, '
+            f'{len(mobile_b["open"])} not started.</span>'
+            f'</div>'
+        )
+
+    if meta["mvp_label"] and lookahead_counts:
+        rows = "".join(
+            f'<div class="ticket open">'
+            f'<span class="pill pill-blue" style="min-width:95px;text-align:center;">{h(release_label_display(label))}</span>'
+            f'<span class="ticket-sum">{count} tagged tickets</span>'
+            f'</div>'
+            for label, count in lookahead_counts.items()
+        )
         body += (
             f'<div class="divider"></div>'
             f'<div class="section-title" style="color:#7c3aed;">'
-            f'&#x1F52D; {h(lookahead_label)} Outlook</div>'
+            f'&#x1F52D; LEF Release Label Outlook</div>'
             f'<div class="alert alert-yellow">'
             f'<span class="alert-icon">&#x1F4CB;</span>'
-            f'<span><strong>{len(lookahead)} tickets tagged {lookahead_label}</strong> &mdash; '
-            f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "done")} done, '
-            f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "inprogress")} in progress.</span>'
+            f'<span><strong>{h(mvp_name)}</strong> is the active LEF focus. Future tagged counts are shown below for staffing look-ahead.</span>'
             f'</div>'
+            f'<div class="ticket-list">{rows}</div>'
         )
 
     return (
@@ -590,12 +680,12 @@ def save_stats(slug: str, per_project: dict):
 def get_prev_stats(slug: str) -> tuple:
     """Return (prev_slug, per-project bucket counts) from the most recent previous run."""
     data = load_stats()
-    dates = sorted(k for k in data if k != slug)
+    dates = sorted(k for k in data if k < slug)
     if not dates:
         return None, {}
     return dates[-1], data[dates[-1]]
 
-def actions_card(all_issues: dict, mvp_total: int, lookahead: list) -> str:
+def actions_card(all_issues: dict, mvp_total: int, lookahead_counts: dict, mobile_issues: list) -> str:
     lef_b   = bucket_issues(all_issues["LEF"])
     lem_b   = bucket_issues(all_issues["LEM"])
     lrf_b   = bucket_issues(all_issues["LRF"])
@@ -604,7 +694,6 @@ def actions_card(all_issues: dict, mvp_total: int, lookahead: list) -> str:
     lem_done = len(lem_b["done"])
     lef_pct  = round(lef_done / mvp_total * 100) if mvp_total else 0
     mvp_name = active_mvp_label()
-    mvp_disp = "June MVP" if "JUNE" in mvp_name else "July MVP"
 
     items = []
     # LEF open risk
@@ -615,13 +704,20 @@ def actions_card(all_issues: dict, mvp_total: int, lookahead: list) -> str:
             f'{"~" if lef_pct < 70 else ""}{100 - lef_pct}% still to go. '
             f'Assign owners or cut scope this week.'
         )
-    # July lookahead
-    if lookahead:
-        unassigned = sum(1 for i in lookahead if not i["fields"].get("assignee"))
+    if lookahead_counts:
+        forecast = ", ".join(
+            f'{release_label_display(label)}: {count}'
+            for label, count in lookahead_counts.items()
+        )
         items.append(
-            f'<strong>[LEF &mdash; July MVP]</strong> {len(lookahead)} tickets tagged JULYMVP &mdash; '
-            f'{sum(1 for i in lookahead if classify_status(i["fields"]["status"]["name"]) == "inprogress")} in progress, '
-            f'{unassigned} unassigned. Staffing plan needed before end of June.'
+            f'<strong>[LEF &mdash; Look Ahead]</strong> Tagged release counts &mdash; {h(forecast)}.'
+        )
+    if mobile_issues:
+        mobile_b = bucket_issues(mobile_issues)
+        items.append(
+            f'<strong>[LEF &mdash; Mobile]</strong> {len(mobile_issues)} tickets tagged {h(LEF_MOBILE_LABEL)} &mdash; '
+            f'{len(mobile_b["inprogress"]) + len(mobile_b["review"])} active, '
+            f'{len(mobile_b["open"])} not started.'
         )
     # LEM done items
     if lem_done > 0:
@@ -727,7 +823,7 @@ def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_tot
         if proj == "LEF":
             pct_curr = round(done / mvp_total * 100) if mvp_total else 0
             pct_prev = round((prev.get("done") or 0) / mvp_total * 100) if mvp_total else None
-            row("LEF", f"{active_mvp_label().replace('MVP','')} MVP — Completed",
+            row("LEF", f"{release_label_display(active_mvp_label())} — Completed",
                 prev.get("done"), done,
                 f'{pct_prev}% &rarr; {pct_curr}% complete' if pct_prev is not None else f'{pct_curr}% complete')
             row("LEF", "Not Started",       prev.get("open"),      open_,  "", lower_is_better=True)
@@ -770,24 +866,26 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
     prev_stats  = prev_stats  or {}
     mvp_totals  = mvp_totals  or {}
 
-    lookahead_lef = []
-    if label == "JUNEMVP":
-        print("Fetching JULYMVP look-ahead for LEF...")
-        lookahead_lef = get_lookahead_issues("LEF", "JULYMVP")
-
     def _card(proj):
         p = prev_stats.get(proj)
         return project_card(
             proj, all_issues[proj],
             prev=p,
             mvp_total=mvp_totals.get(proj),
-            lookahead=lookahead_lef if proj == "LEF" else None,
+            lookahead_counts=mvp_totals.get("LEF_lookahead_counts") if proj == "LEF" else None,
             backlog_total=mvp_totals.get("LEM_backlog") if proj == "LEM" else None,
+            overall_done=mvp_totals.get("LEF_overall_done") if proj == "LEF" else None,
+            mobile_issues=mvp_totals.get("LEF_mobile_issues") if proj == "LEF" else None,
         )
 
     cards      = "\n".join(_card(proj) for proj in PROJECTS)
     lef_mvp    = mvp_totals.get("LEF", 0)
-    bottom_row = actions_card(all_issues, lef_mvp, lookahead_lef) + "\n" + roadmap_card()
+    bottom_row = actions_card(
+        all_issues,
+        lef_mvp,
+        mvp_totals.get("LEF_lookahead_counts", {}),
+        mvp_totals.get("LEF_mobile_issues", []),
+    ) + "\n" + roadmap_card()
     wow        = what_changed_card(date_str, all_issues, prev_stats, lef_mvp, prev_slug=prev_slug)
 
     return f"""<!DOCTYPE html>
@@ -836,21 +934,22 @@ def update_index(new_filename: str, date_str: str):
     except FileNotFoundError:
         content = ""
 
-    new_entry = f'      <li><a href="{new_filename}">{h(date_str)} Weekly Dashboard</a></li>\n'
+    entries = {
+        href: title
+        for href, title in re.findall(r'<li><a href="([^"]+)">([^<]+)</a></li>', content)
+    }
+    entries[new_filename] = f"{date_str} Weekly Dashboard"
 
-    # If this file is already listed, don't add a duplicate
-    if new_filename in content:
-        print(f"{index_path} already contains {new_filename}, skipping duplicate entry")
-        return
-
-    if "<ul>" in content:
-        content = content.replace("<ul>", "<ul>\n" + new_entry, 1)
-    else:
-        content = (
-            "<!doctype html>\n<html lang='en'>\n<head><meta charset='utf-8'/>"
-            "<title>Literacy Weekly Project Dashboard</title></head>\n<body>\n<h1>Literacy Weekly Project Dashboard</h1>\n"
-            f"<ul>\n{new_entry}</ul>\n</body>\n</html>\n"
-        )
+    rows = "".join(
+        f'      <li><a href="{href}">{h(title)}</a></li>\n'
+        for href, title in sorted(entries.items(), reverse=True)
+    )
+    content = (
+        "<!doctype html>\n<html lang='en'>\n<head><meta charset='utf-8'/>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1' />"
+        "<title>Literacy Weekly Project Dashboard</title></head>\n<body>\n<h1>Literacy Weekly Project Dashboard</h1>\n"
+        f"<ul>\n{rows}</ul>\n</body>\n</html>\n"
+    )
 
     with open(index_path, "w") as f:
         f.write(content)
@@ -864,38 +963,52 @@ def main():
         print("ERROR: JIRA_EMAIL and JIRA_API_TOKEN environment variables are required.", file=sys.stderr)
         sys.exit(1)
 
-    today      = datetime.date.today()
+    try:
+        today = parse_dashboard_date(DATE_OVERRIDE)
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
     date_str   = today.strftime("%B %-d, %Y")
     file_slug  = today.strftime("%y%m%d")
     filename   = f"{file_slug}_weekly_dashboard.html"
     label      = active_mvp_label(today)
-
-    print(f"Fetching Jira data for {', '.join(PROJECTS)} ...")
-    all_issues = {}
-    for proj in PROJECTS:
-        all_issues[proj] = get_active_sprint_issues(proj)
-
-    # Fetch total MVP ticket count for LEF progress bar (all statuses)
-    mvp_totals: dict = {}
-    print(f"Fetching {label} total count for LEF...")
-    resp = jira_get("search/jql", {
-        "jql": f"project = LEF AND labels = {label}",
-        "startAt": 0, "maxResults": 1, "fields": "summary",
-    })
-    mvp_totals["LEF"] = resp.get("total", len(all_issues["LEF"]))
-    print(f"  LEF {label} total: {mvp_totals['LEF']}")
-
-    # Fetch LEM total backlog (all non-abandoned tickets)
-    print("Fetching LEM backlog total...")
-    resp = jira_get("search/jql", {
-        "jql": "project = LEM AND statusCategory != Done AND status != Abandoned",
-        "startAt": 0, "maxResults": 1, "fields": "summary",
-    })
-    mvp_totals["LEM_backlog"] = resp.get("total", 0)
-    print(f"  LEM backlog total: {mvp_totals['LEM_backlog']}")
-
-    # Load previous week's stats for deltas
     prev_slug, prev_stats = get_prev_stats(file_slug)
+
+    try:
+        validate_jira_access()
+
+        print(f"Fetching Jira data for {', '.join(PROJECTS)} ...")
+        all_issues = {}
+        for proj in PROJECTS:
+            all_issues[proj] = get_active_sprint_issues(proj, today=today)
+
+        validate_issue_counts(all_issues, prev_stats)
+
+        # Fetch LEF release and mobile tracking counts
+        mvp_totals: dict = {}
+        print(f"Fetching {label} total count for LEF...")
+        lef_label_counts = fetch_lef_label_counts()
+        mvp_totals["LEF"] = lef_label_counts.get(label, len(all_issues["LEF"]))
+        mvp_totals["LEF_lookahead_counts"] = {
+            lookahead_label: lef_label_counts[lookahead_label]
+            for lookahead_label in LEF_LOOKAHEAD_LABELS
+            if lookahead_label in lef_label_counts
+        }
+        mvp_totals["LEF_overall_done"] = jira_total(
+            "project = LEF AND issuetype != Sub-task AND statusCategory = Done"
+        )
+        print(f"  LEF overall done total: {mvp_totals['LEF_overall_done']}")
+        mvp_totals["LEF_mobile_issues"] = fetch_lef_mobile_issues()
+
+        # Fetch LEM total backlog (all non-abandoned tickets)
+        print("Fetching LEM backlog total...")
+        mvp_totals["LEM_backlog"] = jira_total(
+            "project = LEM AND statusCategory != Done AND status != Abandoned"
+        )
+        print(f"  LEM backlog total: {mvp_totals['LEM_backlog']}")
+    except JiraQueryError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
 
     html = render_html(all_issues, date_str, today, prev_stats=prev_stats, prev_slug=prev_slug, mvp_totals=mvp_totals)
 
@@ -920,4 +1033,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

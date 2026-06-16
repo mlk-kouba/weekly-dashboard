@@ -3,7 +3,12 @@ name: Generate Weekly Dashboard
 on:
   schedule:
     - cron: '30 12 * * 3'  # Every Wednesday at 8:30am ET (12:30pm UTC)
-  workflow_dispatch:         # Also runnable manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      dashboard_date:
+        description: 'Optional override date for the dashboard file (YYYY-MM-DD)'
+        required: false
+        type: string
 
 permissions:
   contents: write            # Needs to commit the generated HTML back to the repo
@@ -21,16 +26,30 @@ jobs:
           python-version: '3.12'
 
       - name: Generate dashboard HTML
+        id: generate
         env:
           JIRA_EMAIL:      ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN:  ${{ secrets.JIRA_API_TOKEN }}
           JIRA_INSTANCE:   learningaz.atlassian.net
-        run: python scripts/generate_dashboard.py
+          DASHBOARD_DATE:  ${{ inputs.dashboard_date }}
+        run: |
+          python scripts/generate_dashboard.py
+          slug=$(python - <<'PY'
+import datetime
+import os
+
+raw = (os.environ.get("DASHBOARD_DATE") or "").strip()
+day = datetime.date.fromisoformat(raw) if raw else datetime.date.today()
+print(day.strftime("%y%m%d"))
+PY
+)
+          echo "dashboard_slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "dashboard_file=${slug}_weekly_dashboard.html" >> "$GITHUB_OUTPUT"
 
       - name: Commit generated dashboard
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add *.html index.html stats.json roadmap.json
-          git diff --cached --quiet || git commit -m "Weekly dashboard $(date +'%Y-%m-%d')"
+          git add "${{ steps.generate.outputs.dashboard_file }}" index.html stats.json roadmap.json
+          git diff --cached --quiet || git commit -m "Weekly dashboard ${{ steps.generate.outputs.dashboard_slug }}"
           git push
