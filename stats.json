@@ -105,11 +105,11 @@
   },
   "260610": {
     "LEF": {
-      "done": 30,
-      "inprogress": 15,
-      "review": 2,
-      "open": 48,
-      "abandoned": 5,
+      "done": 52,
+      "inprogress": 10,
+      "review": 0,
+      "open": 38,
+      "abandoned": 0,
       "total": 100
     },
     "LEM": {
