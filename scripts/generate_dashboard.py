@@ -218,7 +218,10 @@ def jira_total(jql: str) -> int:
         "maxResults": 1,
         "fields": "summary",
     })
-    return data.get("total", 0)
+    total = data.get("total")
+    if total is not None:
+        return total
+    return len(jira_search_issues(jql, fields="summary"))
 
 
 def jira_search_issues(jql: str, fields: str = "summary,status,assignee,priority,issuetype,labels") -> list:
@@ -234,7 +237,12 @@ def jira_search_issues(jql: str, fields: str = "summary,status,assignee,priority
         batch = data.get("issues", [])
         issues.extend(batch)
         start += len(batch)
-        if start >= data.get("total", 0) or not batch:
+        total = data.get("total")
+        if not batch:
+            break
+        if total is not None and start >= total:
+            break
+        if total is None and len(batch) < 100:
             break
     return issues
 
