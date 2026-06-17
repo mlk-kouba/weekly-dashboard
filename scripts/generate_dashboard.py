@@ -206,11 +206,14 @@ def _auth_header():
     creds = base64.b64encode(f"{JIRA_EMAIL}:{JIRA_TOKEN}".encode()).decode()
     return {"Authorization": f"Basic {creds}", "Content-Type": "application/json"}
 
-def jira_get(path: str, params: dict = None) -> dict:
+def jira_request(path: str, params: dict = None, method: str = "GET", body: dict = None) -> dict:
     url = f"https://{JIRA_HOST}/rest/api/3/{path}"
     if params:
         url += "?" + urlencode(params)
-    req = Request(url, headers=_auth_header())
+    data = None
+    if body is not None:
+        data = json.dumps(body).encode()
+    req = Request(url, headers=_auth_header(), method=method, data=data)
     try:
         with urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode())
@@ -223,12 +226,23 @@ def jira_get(path: str, params: dict = None) -> dict:
         raise JiraQueryError(f"URL error calling {url}: {e.reason}") from e
 
 
+def jira_get(path: str, params: dict = None) -> dict:
+    return jira_request(path, params=params)
+
+
+def jira_post(path: str, body: dict) -> dict:
+    return jira_request(path, method="POST", body=body)
+
+
+def jira_fields_list(fields: str) -> List[str]:
+    return [field.strip() for field in fields.split(",") if field.strip()]
+
+
 def jira_total(jql: str) -> int:
-    data = jira_get("search", {
+    data = jira_post("search/jql", {
         "jql": jql,
-        "startAt": 0,
         "maxResults": 1,
-        "fields": "summary",
+        "fields": ["summary"],
     })
     total = data.get("total")
     if total is not None:
@@ -242,43 +256,30 @@ def jira_search_issues(
     expand: str = "",
 ) -> list:
     issues = []
-    start = 0
-    seen_pages = set()
+    next_page_token = None
+    seen_tokens = set()
     while True:
-        params = {
+        payload = {
             "jql": jql,
-            "startAt": start,
             "maxResults": 100,
-            "fields": fields,
+            "fields": jira_fields_list(fields),
         }
         if expand:
-            params["expand"] = expand
-        data = jira_get("search", params)
+            payload["expand"] = [value.strip() for value in expand.split(",") if value.strip()]
+        if next_page_token:
+            payload["nextPageToken"] = next_page_token
+        data = jira_post("search/jql", payload)
         batch = data.get("issues", [])
-        page_signature = tuple(issue.get("key") for issue in batch)
-        if batch and page_signature in seen_pages:
-            raise JiraQueryError(
-                "Jira search returned a repeated page while paging results. "
-                "Refusing to continue because the response would loop forever."
-            )
-        seen_pages.add(page_signature)
         issues.extend(batch)
-        response_start = data.get("startAt", start)
-        response_max = data.get("maxResults", len(batch))
-        next_start = response_start + len(batch)
-        total = data.get("total")
-        if not batch:
+        next_page_token = data.get("nextPageToken")
+        if not batch or data.get("isLast", False) or not next_page_token:
             break
-        if total is not None and next_start >= total:
-            break
-        if len(batch) < response_max:
-            break
-        if next_start <= start:
+        if next_page_token in seen_tokens:
             raise JiraQueryError(
-                "Jira search pagination did not advance to the next page. "
+                "Jira search returned a repeated nextPageToken while paging results. "
                 "Refusing to continue because the response would loop forever."
             )
-        start = next_start
+        seen_tokens.add(next_page_token)
     return issues
 
 
