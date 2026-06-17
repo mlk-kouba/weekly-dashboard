@@ -36,7 +36,7 @@ jobs:
           JIRA_EMAIL:      ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN:  ${{ secrets.JIRA_API_TOKEN }}
           JIRA_INSTANCE:   learningaz.atlassian.net
-          DASHBOARD_DATE:  ${{ inputs.dashboard_date || github.event.client_payload.dashboard_date }}
+          DASHBOARD_DATE:  ${{ github.event.inputs.dashboard_date || github.event.client_payload.dashboard_date }}
         run: |
           python scripts/generate_dashboard.py
           slug=$(python - <<'PY'
