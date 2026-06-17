@@ -15,8 +15,8 @@ Update the weekly engineering dashboard for the week of [DATE].
 Boards: LEF · LEM · LRF
 
 Labels:
-- LEF active release items → label = `JULYMVP`
-- LEF look-ahead release count → label = `AugustPrio`
+- LEF active release items → **Fix Version** `July 2026 Monthly Release` and label `JULYMVP`
+- LEF look-ahead release count → **Fix Version** `August 2026 Monthly Release *` and label `AugustPrio`
 - LEF mobile tracker → label = `Mobile`
 
 Section titles:
@@ -33,10 +33,10 @@ For each board include:
   - Any alerts or risks
 
 For LEF specifically:
-  - Keep the primary board focused on `JULYMVP`
+  - Keep the primary board focused on the configured July release (`July 2026 Monthly Release` / `JULYMVP`)
   - Show July release status (% done, tickets in flight, unstarted risk count)
   - Show overall LEF done count across the whole board
-  - Show the `AugustPrio` tagged count as look-ahead
+  - Show the `AugustPrio` / `August 2026 Monthly Release *` count as look-ahead
   - Track `Mobile` labelled tickets separately
 
 For LEM:
@@ -61,7 +61,7 @@ Save as yymmdd-weekly-dashboard.html in C:/Users/mkouba/weekly-project-dashboard
 
 | Board | Key | Jira Label (MVP) | Title in Dashboard |
 |-------|-----|------------------|--------------------|
-| LEF   | LEF | `JULYMVP` + `AugustPrio` look-ahead | Assessment / ReadingPowerZone / SoR |
+| LEF   | LEF | Fix Versions + labels (`JULYMVP`, `AugustPrio`) | Assessment / ReadingPowerZone / SoR |
 | LEM   | LEM | n/a (sprint-based) | Maintenance |
 | LRF   | LRF | n/a | Literacy Integration |
 
@@ -74,8 +74,8 @@ Save as yymmdd-weekly-dashboard.html in C:/Users/mkouba/weekly-project-dashboard
 
 Pull up the previous week's file from this folder and compare:
 
-- [ ] LEF July MVP % done and in-flight count
-- [ ] LEF AugustPrio count for look-ahead planning
+- [ ] LEF July release (`July 2026 Monthly Release`) % done and in-flight count
+- [ ] LEF August release (`August 2026 Monthly Release *`) count for look-ahead planning
 - [ ] LEF mobile tickets: are unassigned items getting owners?
 - [ ] LEM: were last week's flagged risks resolved?
 - [ ] LRF: overall completion % trending up
@@ -109,8 +109,16 @@ For a missed Wednesday, run the workflow manually with the `dashboard_date` inpu
 
 | CSS class | Color | Jira Status |
 |-----------|-------|-------------|
-| `inprogress` | Blue left border | In Progress, In Testing, In Review |
-| `done` | Green left border | Done, Verify Ready, Final Review |
+| `inprogress` | Blue left border | In Progress |
+| `review` | Purple left border | Ready for QA, QA in Progress, Final Approval |
+| `done` | Green left border | Done |
 | `blocked` | Red left border | Blocked |
-| `open` | Yellow left border | Open Request, Selected for Development |
+| `open` | Yellow left border | To Do, Open Request, Selected for Development |
 | `planning` | Purple left border | Planning, Refine Ready, New |
+
+## LEF Tracking Rules
+
+- LEF release tracking uses the values in `dashboard_config.json`
+- Release selectors are based on **Fix Versions** first, with labels kept alongside them for reference
+- LEF release/mobile tracking includes subtasks because those tags are applied at that level
+- A LEF item counts as **done** when its status is `Done`

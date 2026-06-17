@@ -1,0 +1,34 @@
+{
+  "lef": {
+    "active_release": {
+      "display": "July MVP",
+      "fix_version": "July 2026 Monthly Release",
+      "label": "JULYMVP"
+    },
+    "lookahead_releases": [
+      {
+        "display": "August Priority",
+        "fix_version": "August 2026 Monthly Release *",
+        "label": "AugustPrio"
+      }
+    ],
+    "mobile_label": "Mobile",
+    "include_subtasks": true,
+    "status_groups": {
+      "open": [
+        "To Do"
+      ],
+      "inprogress": [
+        "In Progress"
+      ],
+      "review": [
+        "Ready for QA",
+        "QA in Progress",
+        "Final Approval"
+      ],
+      "done": [
+        "Done"
+      ]
+    }
+  }
+}

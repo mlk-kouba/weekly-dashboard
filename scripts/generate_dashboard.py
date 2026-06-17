@@ -27,13 +27,21 @@ JIRA_TOKEN    = os.environ.get("JIRA_API_TOKEN", "")
 JIRA_HOST     = os.environ.get("JIRA_INSTANCE", "learningaz.atlassian.net")
 PROJECTS      = ["LEF", "LEM", "LRF"]
 DATE_OVERRIDE = os.environ.get("DASHBOARD_DATE", "").strip()
-LEF_ACTIVE_LABEL = os.environ.get("LEF_ACTIVE_LABEL", "JULYMVP")
-LEF_LOOKAHEAD_LABELS = {"AugustPrio": "August Priority"}
-LEF_MOBILE_LABEL = os.environ.get("LEF_MOBILE_LABEL", "Mobile")
+CONFIG_FILE = "dashboard_config.json"
 
 
 class JiraQueryError(RuntimeError):
     """Raised when Jira cannot be queried reliably enough to build the dashboard."""
+
+
+def load_dashboard_config() -> dict:
+    try:
+        with open(CONFIG_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError as exc:
+        raise JiraQueryError(f"Missing required config file: {CONFIG_FILE}") from exc
+    except json.JSONDecodeError as exc:
+        raise JiraQueryError(f"Invalid JSON in {CONFIG_FILE}: {exc}") from exc
 
 
 def parse_dashboard_date(raw: str = "") -> datetime.date:
@@ -48,11 +56,20 @@ def parse_dashboard_date(raw: str = "") -> datetime.date:
 
 
 def release_label_display(label: str) -> str:
-    if label in LEF_LOOKAHEAD_LABELS:
-        return LEF_LOOKAHEAD_LABELS[label]
-    if label.endswith("MVP"):
-        return f"{label[:-3].title()} MVP"
-    return label
+    release = RELEASES_BY_LABEL.get(label, {})
+    return release.get("display", label)
+
+
+DASHBOARD_CONFIG = load_dashboard_config()
+LEF_RULES = DASHBOARD_CONFIG["lef"]
+LEF_ACTIVE_RELEASE = LEF_RULES["active_release"]
+LEF_LOOKAHEAD_RELEASES = LEF_RULES.get("lookahead_releases", [])
+LEF_MOBILE_LABEL = LEF_RULES.get("mobile_label", "Mobile")
+LEF_INCLUDE_SUBTASKS = LEF_RULES.get("include_subtasks", True)
+RELEASES_BY_LABEL = {
+    release["label"]: release
+    for release in [LEF_ACTIVE_RELEASE, *LEF_LOOKAHEAD_RELEASES]
+}
 
 def _first_wednesday(year: int, month: int) -> datetime.date:
     """Return the first Wednesday of the given month."""
@@ -93,7 +110,7 @@ def next_release_info(today: datetime.date = None) -> dict:
 
 def active_mvp_label(today: datetime.date = None) -> str:
     """Return the active LEF release label."""
-    return LEF_ACTIVE_LABEL
+    return LEF_ACTIVE_RELEASE["label"]
 
 PROJECT_META = {
     "LEF": {
@@ -166,6 +183,9 @@ STATUS_MAP = {
     "blocked":                "abandoned",
     "impediment":             "abandoned",
 }
+for bucket, statuses in LEF_RULES.get("status_groups", {}).items():
+    for status in statuses:
+        STATUS_MAP[status.lower().strip()] = bucket
 
 # ---------------------------------------------------------------------------
 # Jira API helpers
@@ -201,6 +221,24 @@ def jira_total(jql: str) -> int:
     return data.get("total", 0)
 
 
+def jira_search_issues(jql: str, fields: str = "summary,status,assignee,priority,issuetype,labels") -> list:
+    issues = []
+    start = 0
+    while True:
+        data = jira_get("search/jql", {
+            "jql": jql,
+            "startAt": start,
+            "maxResults": 100,
+            "fields": fields,
+        })
+        batch = data.get("issues", [])
+        issues.extend(batch)
+        start += len(batch)
+        if start >= data.get("total", 0) or not batch:
+            break
+    return issues
+
+
 def validate_jira_access():
     me = jira_get("myself")
     if not me.get("accountId"):
@@ -208,6 +246,28 @@ def validate_jira_access():
             "Jira authentication succeeded without an account identity. "
             "Verify the JIRA_EMAIL and JIRA_API_TOKEN secrets."
         )
+
+
+def jql_quote(value: str) -> str:
+    return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def lef_issue_type_clause() -> str:
+    return "" if LEF_INCLUDE_SUBTASKS else ' AND issuetype != "Sub-task"'
+
+
+def lef_release_clause(release: dict) -> str:
+    clauses = []
+    fix_version = release.get("fix_version")
+    label = release.get("label")
+    if fix_version:
+        clauses.append(f"fixVersion = {jql_quote(fix_version)}")
+    if label:
+        clauses.append(f"labels = {jql_quote(label)}")
+    if not clauses:
+        raise JiraQueryError("LEF release config must define at least one of fix_version or label.")
+    return "(" + " OR ".join(clauses) + ")" + lef_issue_type_clause()
+
 
 def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
     """Return issues for a project.
@@ -217,9 +277,9 @@ def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
     meta  = PROJECT_META[project]
     label = active_mvp_label(d)
     if meta["mvp_label"]:
-        # LEF: no sprint filter — all MVP-labelled tickets so done in closed sprints are counted
+        # LEF: use the configured release selectors as the source of truth.
         jql = (
-            f'project = {project} AND labels = {label} AND issuetype != Sub-task '
+            f"project = {project} AND {lef_release_clause(LEF_ACTIVE_RELEASE)} "
             f'ORDER BY status ASC, priority DESC'
         )
     else:
@@ -233,22 +293,7 @@ def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
             f'(statusCategory = Done AND updatedDate >= "{month_start}" AND updatedDate < "{day_after}")'
             f') ORDER BY status ASC, updated DESC'
         )
-    issues = []
-    start  = 0
-    while True:
-        data = jira_get("search/jql", {
-            "jql":        jql,
-            "startAt":    start,
-            "maxResults": 100,
-            "fields":     "summary,status,assignee,priority,issuetype,labels",
-        })
-        if not data or "issues" not in data:
-            break
-        batch = data["issues"]
-        issues.extend(batch)
-        start += len(batch)
-        if start >= data.get("total", 0):
-            break
+    issues = jira_search_issues(jql)
 
     print(f"  {project}: {len(issues)} issues")
     if issues:
@@ -256,23 +301,20 @@ def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
         print(f"  {project} statuses found: {', '.join(statuses)}")
     return issues
 
-def fetch_lef_label_counts() -> dict:
+def fetch_lef_release_counts() -> dict:
     counts = {}
-    for label in [LEF_ACTIVE_LABEL, *LEF_LOOKAHEAD_LABELS.keys()]:
-        total = jira_total(f"project = LEF AND labels = {label} AND issuetype != Sub-task")
+    for release in [LEF_ACTIVE_RELEASE, *LEF_LOOKAHEAD_RELEASES]:
+        label = release["label"]
+        total = jira_total(f"project = LEF AND {lef_release_clause(release)}")
         counts[label] = total
         print(f"  LEF {label} total: {total}")
     return counts
 
 
 def fetch_lef_mobile_issues() -> list:
-    data = jira_get("search/jql", {
-        "jql": f'project = LEF AND labels = {LEF_MOBILE_LABEL} AND issuetype != Sub-task ORDER BY status ASC, priority DESC',
-        "startAt": 0,
-        "maxResults": 100,
-        "fields": "summary,status,assignee,priority,issuetype,labels",
-    })
-    issues = data.get("issues", [])
+    issues = jira_search_issues(
+        f"project = LEF AND labels = {jql_quote(LEF_MOBILE_LABEL)}{lef_issue_type_clause()} ORDER BY status ASC, priority DESC"
+    )
     print(f"  LEF Mobile total: {len(issues)} issues")
     return issues
 
@@ -987,15 +1029,15 @@ def main():
         # Fetch LEF release and mobile tracking counts
         mvp_totals: dict = {}
         print(f"Fetching {label} total count for LEF...")
-        lef_label_counts = fetch_lef_label_counts()
+        lef_label_counts = fetch_lef_release_counts()
         mvp_totals["LEF"] = lef_label_counts.get(label, len(all_issues["LEF"]))
         mvp_totals["LEF_lookahead_counts"] = {
-            lookahead_label: lef_label_counts[lookahead_label]
-            for lookahead_label in LEF_LOOKAHEAD_LABELS
-            if lookahead_label in lef_label_counts
+            release["label"]: lef_label_counts[release["label"]]
+            for release in LEF_LOOKAHEAD_RELEASES
+            if release["label"] in lef_label_counts
         }
         mvp_totals["LEF_overall_done"] = jira_total(
-            "project = LEF AND issuetype != Sub-task AND statusCategory = Done"
+            f'project = LEF AND status = "Done"{lef_issue_type_clause()}'
         )
         print(f"  LEF overall done total: {mvp_totals['LEF_overall_done']}")
         mvp_totals["LEF_mobile_issues"] = fetch_lef_mobile_issues()
