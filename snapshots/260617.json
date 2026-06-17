@@ -4,7 +4,7 @@
   "dashboard_date": "2026-06-17",
   "cutoff_utc": "2026-06-17T12:30:00+00:00",
   "source": "live",
-  "generated_at_utc": "2026-06-17T13:09:55.513089+00:00",
+  "generated_at_utc": "2026-06-17T16:25:35.603255+00:00",
   "config": {
     "lef": {
       "active_release": {
@@ -41,68 +41,6 @@
   },
   "all_issues": {
     "LEF": [
-      {
-        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
-        "id": "56797",
-        "self": "https://learningaz.atlassian.net/rest/api/3/issue/56797",
-        "key": "LEF-4288",
-        "fields": {
-          "summary": "Adding a student Paz-plus Roster page Lexile Measure Marking student as Beginning of Year Assessment ",
-          "issuetype": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
-            "id": "10037",
-            "description": "Stories track functionality or features expressed as user goals.",
-            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
-            "name": "Story",
-            "subtask": false,
-            "avatarId": 10315,
-            "hierarchyLevel": 0
-          },
-          "created": "2026-05-26T11:48:50.442-0400",
-          "resolutiondate": null,
-          "fixVersions": [],
-          "assignee": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=712020%3A4d4d39ec-44d0-4262-97cf-77ae32fe8ca3",
-            "accountId": "712020:4d4d39ec-44d0-4262-97cf-77ae32fe8ca3",
-            "emailAddress": "jack.fouch@learninga-z.com",
-            "avatarUrls": {
-              "48x48": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
-              "24x24": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
-              "16x16": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
-              "32x32": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png"
-            },
-            "displayName": "Jack Fouch",
-            "active": true,
-            "timeZone": "America/New_York",
-            "accountType": "atlassian"
-          },
-          "priority": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10000",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/blocker.svg",
-            "name": "Blocker",
-            "id": "10000"
-          },
-          "status": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/status/3",
-            "description": "This issue is being actively worked on at the moment by the assignee.",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/inprogress.png",
-            "name": "In Progress",
-            "id": "3",
-            "statusCategory": {
-              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/4",
-              "id": 4,
-              "key": "indeterminate",
-              "colorName": "yellow",
-              "name": "In Progress"
-            }
-          },
-          "labels": [
-            "JulyMVP",
-            "PushCandidate",
-            "StretchGoal"
-          ]
-        }
-      },
       {
         "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
         "id": "56840",
@@ -164,6 +102,67 @@
       },
       {
         "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+        "id": "20160",
+        "self": "https://learningaz.atlassian.net/rest/api/3/issue/20160",
+        "key": "LEF-3649",
+        "fields": {
+          "summary": "Account Management: Assignment Report",
+          "issuetype": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
+            "id": "10037",
+            "description": "Stories track functionality or features expressed as user goals.",
+            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+            "name": "Story",
+            "subtask": false,
+            "avatarId": 10315,
+            "hierarchyLevel": 0
+          },
+          "created": "2026-02-13T19:29:36.953-0500",
+          "resolutiondate": null,
+          "fixVersions": [],
+          "assignee": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=712020%3A4d4d39ec-44d0-4262-97cf-77ae32fe8ca3",
+            "accountId": "712020:4d4d39ec-44d0-4262-97cf-77ae32fe8ca3",
+            "emailAddress": "jack.fouch@learninga-z.com",
+            "avatarUrls": {
+              "48x48": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
+              "24x24": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
+              "16x16": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
+              "32x32": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png"
+            },
+            "displayName": "Jack Fouch",
+            "active": true,
+            "timeZone": "America/New_York",
+            "accountType": "atlassian"
+          },
+          "priority": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10004",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/high.svg",
+            "name": "High",
+            "id": "10004"
+          },
+          "status": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/status/3",
+            "description": "This issue is being actively worked on at the moment by the assignee.",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/inprogress.png",
+            "name": "In Progress",
+            "id": "3",
+            "statusCategory": {
+              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/4",
+              "id": 4,
+              "key": "indeterminate",
+              "colorName": "yellow",
+              "name": "In Progress"
+            }
+          },
+          "labels": [
+            "JulyMVP",
+            "StretchGoal"
+          ]
+        }
+      },
+      {
+        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
         "id": "19865",
         "self": "https://learningaz.atlassian.net/rest/api/3/issue/19865",
         "key": "LEF-3645",
@@ -219,6 +218,68 @@
           },
           "labels": [
             "JulyMVP"
+          ]
+        }
+      },
+      {
+        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+        "id": "57558",
+        "self": "https://learningaz.atlassian.net/rest/api/3/issue/57558",
+        "key": "LEF-4461",
+        "fields": {
+          "summary": "Engagement Activity Notes in Reports",
+          "issuetype": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
+            "id": "10037",
+            "description": "Stories track functionality or features expressed as user goals.",
+            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+            "name": "Story",
+            "subtask": false,
+            "avatarId": 10315,
+            "hierarchyLevel": 0
+          },
+          "created": "2026-06-12T09:55:21.568-0400",
+          "resolutiondate": null,
+          "fixVersions": [],
+          "assignee": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=712020%3A8eee8916-2e80-4030-8de7-eeb2a428137c",
+            "accountId": "712020:8eee8916-2e80-4030-8de7-eeb2a428137c",
+            "emailAddress": "allen.richardson@learninga-z.com",
+            "avatarUrls": {
+              "48x48": "https://secure.gravatar.com/avatar/eb66810ef2d04b8c44d8f27c517135e1?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAR-2.png",
+              "24x24": "https://secure.gravatar.com/avatar/eb66810ef2d04b8c44d8f27c517135e1?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAR-2.png",
+              "16x16": "https://secure.gravatar.com/avatar/eb66810ef2d04b8c44d8f27c517135e1?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAR-2.png",
+              "32x32": "https://secure.gravatar.com/avatar/eb66810ef2d04b8c44d8f27c517135e1?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAR-2.png"
+            },
+            "displayName": "Allen Richardson",
+            "active": true,
+            "timeZone": "America/New_York",
+            "accountType": "atlassian"
+          },
+          "priority": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10005",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/medium.svg",
+            "name": "Medium",
+            "id": "10005"
+          },
+          "status": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/status/3",
+            "description": "This issue is being actively worked on at the moment by the assignee.",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/inprogress.png",
+            "name": "In Progress",
+            "id": "3",
+            "statusCategory": {
+              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/4",
+              "id": 4,
+              "key": "indeterminate",
+              "colorName": "yellow",
+              "name": "In Progress"
+            }
+          },
+          "labels": [
+            "JulyMVP",
+            "PushCandidate",
+            "StretchGoal"
           ]
         }
       },
@@ -6702,6 +6763,68 @@
       },
       {
         "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+        "id": "56797",
+        "self": "https://learningaz.atlassian.net/rest/api/3/issue/56797",
+        "key": "LEF-4288",
+        "fields": {
+          "summary": "Adding a student Paz-plus Roster page Lexile Measure Marking student as Beginning of Year Assessment ",
+          "issuetype": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
+            "id": "10037",
+            "description": "Stories track functionality or features expressed as user goals.",
+            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+            "name": "Story",
+            "subtask": false,
+            "avatarId": 10315,
+            "hierarchyLevel": 0
+          },
+          "created": "2026-05-26T11:48:50.442-0400",
+          "resolutiondate": "2026-06-17T10:43:00.579-0400",
+          "fixVersions": [],
+          "assignee": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=712020%3A4d4d39ec-44d0-4262-97cf-77ae32fe8ca3",
+            "accountId": "712020:4d4d39ec-44d0-4262-97cf-77ae32fe8ca3",
+            "emailAddress": "jack.fouch@learninga-z.com",
+            "avatarUrls": {
+              "48x48": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
+              "24x24": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
+              "16x16": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
+              "32x32": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png"
+            },
+            "displayName": "Jack Fouch",
+            "active": true,
+            "timeZone": "America/New_York",
+            "accountType": "atlassian"
+          },
+          "priority": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10000",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/blocker.svg",
+            "name": "Blocker",
+            "id": "10000"
+          },
+          "status": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/status/10073",
+            "description": "(Migrated on 11 Apr 2026 13:21 UTC)",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/generic.png",
+            "name": "Abandoned",
+            "id": "10073",
+            "statusCategory": {
+              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/3",
+              "id": 3,
+              "key": "done",
+              "colorName": "green",
+              "name": "Done"
+            }
+          },
+          "labels": [
+            "JulyMVP",
+            "PushCandidate",
+            "StretchGoal"
+          ]
+        }
+      },
+      {
+        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
         "id": "57262",
         "self": "https://learningaz.atlassian.net/rest/api/3/issue/57262",
         "key": "LEF-4408",
@@ -6941,115 +7064,6 @@
           },
           "labels": [
             "JulyMVP"
-          ]
-        }
-      },
-      {
-        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
-        "id": "20160",
-        "self": "https://learningaz.atlassian.net/rest/api/3/issue/20160",
-        "key": "LEF-3649",
-        "fields": {
-          "summary": "Account Management: Assignment Report",
-          "issuetype": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
-            "id": "10037",
-            "description": "Stories track functionality or features expressed as user goals.",
-            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
-            "name": "Story",
-            "subtask": false,
-            "avatarId": 10315,
-            "hierarchyLevel": 0
-          },
-          "created": "2026-02-13T19:29:36.953-0500",
-          "resolutiondate": null,
-          "fixVersions": [],
-          "assignee": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=712020%3A4d4d39ec-44d0-4262-97cf-77ae32fe8ca3",
-            "accountId": "712020:4d4d39ec-44d0-4262-97cf-77ae32fe8ca3",
-            "emailAddress": "jack.fouch@learninga-z.com",
-            "avatarUrls": {
-              "48x48": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
-              "24x24": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
-              "16x16": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png",
-              "32x32": "https://secure.gravatar.com/avatar/3ab966ba01f5d0ec72a0dd277d6d8da2?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJF-1.png"
-            },
-            "displayName": "Jack Fouch",
-            "active": true,
-            "timeZone": "America/New_York",
-            "accountType": "atlassian"
-          },
-          "priority": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10004",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/high.svg",
-            "name": "High",
-            "id": "10004"
-          },
-          "status": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/status/10074",
-            "description": "(Migrated on 11 Apr 2026 13:21 UTC)",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/generic.png",
-            "name": "Selected for Development",
-            "id": "10074",
-            "statusCategory": {
-              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/2",
-              "id": 2,
-              "key": "new",
-              "colorName": "blue-gray",
-              "name": "To Do"
-            }
-          },
-          "labels": [
-            "JulyMVP",
-            "StretchGoal"
-          ]
-        }
-      },
-      {
-        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
-        "id": "57558",
-        "self": "https://learningaz.atlassian.net/rest/api/3/issue/57558",
-        "key": "LEF-4461",
-        "fields": {
-          "summary": "Engagement Activity Notes in Reports",
-          "issuetype": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
-            "id": "10037",
-            "description": "Stories track functionality or features expressed as user goals.",
-            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
-            "name": "Story",
-            "subtask": false,
-            "avatarId": 10315,
-            "hierarchyLevel": 0
-          },
-          "created": "2026-06-12T09:55:21.568-0400",
-          "resolutiondate": null,
-          "fixVersions": [],
-          "assignee": null,
-          "priority": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10005",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/medium.svg",
-            "name": "Medium",
-            "id": "10005"
-          },
-          "status": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/status/10074",
-            "description": "(Migrated on 11 Apr 2026 13:21 UTC)",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/generic.png",
-            "name": "Selected for Development",
-            "id": "10074",
-            "statusCategory": {
-              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/2",
-              "id": 2,
-              "key": "new",
-              "colorName": "blue-gray",
-              "name": "To Do"
-            }
-          },
-          "labels": [
-            "JulyMVP",
-            "PushCandidate",
-            "StretchGoal"
           ]
         }
       },
@@ -7296,54 +7310,6 @@
       },
       {
         "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
-        "id": "57466",
-        "self": "https://learningaz.atlassian.net/rest/api/3/issue/57466",
-        "key": "LEF-4434",
-        "fields": {
-          "summary": "Overall Engagement-In-Flow Updates",
-          "issuetype": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
-            "id": "10037",
-            "description": "Stories track functionality or features expressed as user goals.",
-            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
-            "name": "Story",
-            "subtask": false,
-            "avatarId": 10315,
-            "hierarchyLevel": 0
-          },
-          "created": "2026-06-09T11:00:07.120-0400",
-          "resolutiondate": null,
-          "fixVersions": [],
-          "assignee": null,
-          "priority": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10009",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/critical.svg",
-            "name": "Triage",
-            "id": "10009"
-          },
-          "status": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/status/10087",
-            "description": "(Migrated on 11 Apr 2026 13:21 UTC)",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/generic.png",
-            "name": "New",
-            "id": "10087",
-            "statusCategory": {
-              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/2",
-              "id": 2,
-              "key": "new",
-              "colorName": "blue-gray",
-              "name": "To Do"
-            }
-          },
-          "labels": [
-            "JulyMVP",
-            "Pre-RefinementNeeded",
-            "PushCandidate"
-          ]
-        }
-      },
-      {
-        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
         "id": "20191",
         "self": "https://learningaz.atlassian.net/rest/api/3/issue/20191",
         "key": "LEF-3870",
@@ -7494,6 +7460,53 @@
           "labels": [
             "Backend",
             "JulyMVP"
+          ]
+        }
+      },
+      {
+        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+        "id": "57466",
+        "self": "https://learningaz.atlassian.net/rest/api/3/issue/57466",
+        "key": "LEF-4434",
+        "fields": {
+          "summary": "Overall Engagement-In-Flow Updates",
+          "issuetype": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
+            "id": "10037",
+            "description": "Stories track functionality or features expressed as user goals.",
+            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+            "name": "Story",
+            "subtask": false,
+            "avatarId": 10315,
+            "hierarchyLevel": 0
+          },
+          "created": "2026-06-09T11:00:07.120-0400",
+          "resolutiondate": null,
+          "fixVersions": [],
+          "assignee": null,
+          "priority": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10009",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/critical.svg",
+            "name": "Triage",
+            "id": "10009"
+          },
+          "status": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/status/10088",
+            "description": "(Migrated on 11 Apr 2026 13:21 UTC)",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/generic.png",
+            "name": "Refine Ready",
+            "id": "10088",
+            "statusCategory": {
+              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/4",
+              "id": 4,
+              "key": "indeterminate",
+              "colorName": "yellow",
+              "name": "In Progress"
+            }
+          },
+          "labels": [
+            "JulyMVP",
+            "PushCandidate"
           ]
         }
       },
@@ -7783,7 +7796,21 @@
               "releaseDate": "2026-07-01"
             }
           ],
-          "assignee": null,
+          "assignee": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=70121%3Ad1929a69-5a61-4be4-9760-1061275a05f3",
+            "accountId": "70121:d1929a69-5a61-4be4-9760-1061275a05f3",
+            "emailAddress": "mario.ball@learninga-z.com",
+            "avatarUrls": {
+              "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/48",
+              "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/24",
+              "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/16",
+              "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/32"
+            },
+            "displayName": "Mario Ball",
+            "active": true,
+            "timeZone": "America/New_York",
+            "accountType": "atlassian"
+          },
           "priority": {
             "self": "https://learningaz.atlassian.net/rest/api/3/priority/10005",
             "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/medium.svg",
@@ -7903,6 +7930,74 @@
           },
           "created": "2026-06-16T09:00:38.295-0400",
           "resolutiondate": null,
+          "fixVersions": [
+            {
+              "self": "https://learningaz.atlassian.net/rest/api/3/version/10634",
+              "id": "10634",
+              "description": "",
+              "name": "July 2026 Monthly Release",
+              "archived": false,
+              "released": false,
+              "releaseDate": "2026-07-01"
+            }
+          ],
+          "assignee": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=70121%3Ad1929a69-5a61-4be4-9760-1061275a05f3",
+            "accountId": "70121:d1929a69-5a61-4be4-9760-1061275a05f3",
+            "emailAddress": "mario.ball@learninga-z.com",
+            "avatarUrls": {
+              "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/48",
+              "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/24",
+              "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/16",
+              "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/32"
+            },
+            "displayName": "Mario Ball",
+            "active": true,
+            "timeZone": "America/New_York",
+            "accountType": "atlassian"
+          },
+          "priority": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10009",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/critical.svg",
+            "name": "Triage",
+            "id": "10009"
+          },
+          "status": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/status/10090",
+            "description": "(Migrated on 11 Apr 2026 13:21 UTC)",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/generic.png",
+            "name": "Verify Ready",
+            "id": "10090",
+            "statusCategory": {
+              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/2",
+              "id": 2,
+              "key": "new",
+              "colorName": "blue-gray",
+              "name": "To Do"
+            }
+          },
+          "labels": []
+        }
+      },
+      {
+        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+        "id": "57605",
+        "self": "https://learningaz.atlassian.net/rest/api/3/issue/57605",
+        "key": "LEF-4464",
+        "fields": {
+          "summary": "OG KAZ shows Level Up in Reading menu when it shouldn't (intermediate interface)",
+          "issuetype": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10074",
+            "id": "10074",
+            "description": "A problem which impairs or prevents the functions of the product. (Migrated on 11 Apr 2026 13:21 UTC)",
+            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
+            "name": "Bug",
+            "subtask": false,
+            "avatarId": 10303,
+            "hierarchyLevel": 0
+          },
+          "created": "2026-06-15T16:21:23.029-0400",
+          "resolutiondate": "2026-06-16T13:01:03.285-0400",
           "fixVersions": [
             {
               "self": "https://learningaz.atlassian.net/rest/api/3/version/10634",
@@ -8372,11 +8467,83 @@
       },
       {
         "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+        "id": "57443",
+        "self": "https://learningaz.atlassian.net/rest/api/3/issue/57443",
+        "key": "LEM-7827",
+        "fields": {
+          "summary": "KAZ [Web] - Reading Custom Assignments - Students are returned to Assignments page when trying to open certain activities",
+          "issuetype": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10074",
+            "id": "10074",
+            "description": "A problem which impairs or prevents the functions of the product. (Migrated on 11 Apr 2026 13:21 UTC)",
+            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
+            "name": "Bug",
+            "subtask": false,
+            "avatarId": 10303,
+            "hierarchyLevel": 0
+          },
+          "created": "2026-06-08T11:43:45.030-0400",
+          "resolutiondate": "2026-06-17T10:50:40.894-0400",
+          "fixVersions": [
+            {
+              "self": "https://learningaz.atlassian.net/rest/api/3/version/17347",
+              "id": "17347",
+              "name": "clt_26_06_003",
+              "archived": false,
+              "released": false,
+              "releaseDate": "2026-06-17"
+            }
+          ],
+          "assignee": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=70121%3Ad1929a69-5a61-4be4-9760-1061275a05f3",
+            "accountId": "70121:d1929a69-5a61-4be4-9760-1061275a05f3",
+            "emailAddress": "mario.ball@learninga-z.com",
+            "avatarUrls": {
+              "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/48",
+              "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/24",
+              "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/16",
+              "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/32"
+            },
+            "displayName": "Mario Ball",
+            "active": true,
+            "timeZone": "America/New_York",
+            "accountType": "atlassian"
+          },
+          "priority": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10002",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/major.svg",
+            "name": "Major",
+            "id": "10002"
+          },
+          "status": {
+            "self": "https://learningaz.atlassian.net/rest/api/3/status/10068",
+            "description": "This was auto-generated by Jira Service Management during workflow import (Migrated on 11 Apr 2026 13:21 UTC)",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/generic.png",
+            "name": "Done",
+            "id": "10068",
+            "statusCategory": {
+              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/3",
+              "id": 3,
+              "key": "done",
+              "colorName": "green",
+              "name": "Done"
+            }
+          },
+          "labels": [
+            "Branch_Merged",
+            "Diffs_Verified",
+            "KAZ",
+            "pager"
+          ]
+        }
+      },
+      {
+        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
         "id": "57570",
         "self": "https://learningaz.atlassian.net/rest/api/3/issue/57570",
         "key": "LEM-7836",
         "fields": {
-          "summary": "TAL Content",
+          "summary": "TAL Content - Batch 2",
           "issuetype": {
             "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10072",
             "id": "10072",
@@ -8489,6 +8656,7 @@
             }
           },
           "labels": [
+            "Branch_Merged",
             "KAZ",
             "Mobile",
             "pager"
@@ -10036,66 +10204,6 @@
       },
       {
         "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
-        "id": "56967",
-        "self": "https://learningaz.atlassian.net/rest/api/3/issue/56967",
-        "key": "LEM-7791",
-        "fields": {
-          "summary": "Unsafe Implementation Of Subresource Integrity (SRI) LAZ",
-          "issuetype": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10070",
-            "id": "10070",
-            "description": "used to track technical improvements (optimization, refactoring, increase unit test coverage, etc) to the product or process where product mgmt UAT / final review is not needed (Migrated on 11 Apr 2026 13:21 UTC)",
-            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10780?size=medium",
-            "name": "Technical User Story",
-            "subtask": false,
-            "avatarId": 10780,
-            "hierarchyLevel": 0
-          },
-          "created": "2026-05-29T09:19:57.196-0400",
-          "resolutiondate": null,
-          "fixVersions": [],
-          "assignee": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=712020%3A316d458d-3ae9-40e1-81d6-356702062918",
-            "accountId": "712020:316d458d-3ae9-40e1-81d6-356702062918",
-            "emailAddress": "marco.bertuccelli@learninga-z.com",
-            "avatarUrls": {
-              "48x48": "https://secure.gravatar.com/avatar/4410e1c5e765412f577fa43fc68c17b6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMB-3.png",
-              "24x24": "https://secure.gravatar.com/avatar/4410e1c5e765412f577fa43fc68c17b6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMB-3.png",
-              "16x16": "https://secure.gravatar.com/avatar/4410e1c5e765412f577fa43fc68c17b6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMB-3.png",
-              "32x32": "https://secure.gravatar.com/avatar/4410e1c5e765412f577fa43fc68c17b6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMB-3.png"
-            },
-            "displayName": "Marco Bertuccelli",
-            "active": true,
-            "timeZone": "America/New_York",
-            "accountType": "atlassian"
-          },
-          "priority": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10004",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/high.svg",
-            "name": "High",
-            "id": "10004"
-          },
-          "status": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/status/10074",
-            "description": "(Migrated on 11 Apr 2026 13:21 UTC)",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/generic.png",
-            "name": "Selected for Development",
-            "id": "10074",
-            "statusCategory": {
-              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/2",
-              "id": 2,
-              "key": "new",
-              "colorName": "blue-gray",
-              "name": "To Do"
-            }
-          },
-          "labels": [
-            "security"
-          ]
-        }
-      },
-      {
-        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
         "id": "44860",
         "self": "https://learningaz.atlassian.net/rest/api/3/issue/44860",
         "key": "LEM-6341",
@@ -10398,74 +10506,6 @@
             "KAZ",
             "pager"
           ]
-        }
-      },
-      {
-        "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
-        "id": "57613",
-        "self": "https://learningaz.atlassian.net/rest/api/3/issue/57613",
-        "key": "LEM-7841",
-        "fields": {
-          "summary": "Update FIN lower environments to point to prod help files",
-          "issuetype": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
-            "id": "10037",
-            "description": "Stories track functionality or features expressed as user goals.",
-            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
-            "name": "Story",
-            "subtask": false,
-            "avatarId": 10315,
-            "hierarchyLevel": 0
-          },
-          "created": "2026-06-16T09:56:18.288-0400",
-          "resolutiondate": null,
-          "fixVersions": [
-            {
-              "self": "https://learningaz.atlassian.net/rest/api/3/version/13092",
-              "id": "13092",
-              "description": "July 2026 Monthly Release",
-              "name": "July 2026 Monthly Release",
-              "archived": false,
-              "released": false,
-              "releaseDate": "2026-07-01"
-            }
-          ],
-          "assignee": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=712020%3Ac861c86b-f804-4a02-9453-f4a58130c270",
-            "accountId": "712020:c861c86b-f804-4a02-9453-f4a58130c270",
-            "emailAddress": "josh.gearhart@learninga-z.com",
-            "avatarUrls": {
-              "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/712020:c861c86b-f804-4a02-9453-f4a58130c270/b7697f4e-a850-4a52-b573-7b01287b4c6c/48",
-              "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/712020:c861c86b-f804-4a02-9453-f4a58130c270/b7697f4e-a850-4a52-b573-7b01287b4c6c/24",
-              "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/712020:c861c86b-f804-4a02-9453-f4a58130c270/b7697f4e-a850-4a52-b573-7b01287b4c6c/16",
-              "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/712020:c861c86b-f804-4a02-9453-f4a58130c270/b7697f4e-a850-4a52-b573-7b01287b4c6c/32"
-            },
-            "displayName": "Josh Gearhart",
-            "active": true,
-            "timeZone": "America/New_York",
-            "accountType": "atlassian"
-          },
-          "priority": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10009",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/critical.svg",
-            "name": "Triage",
-            "id": "10009"
-          },
-          "status": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/status/10075",
-            "description": "(Migrated on 11 Apr 2026 13:21 UTC)",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/statuses/generic.png",
-            "name": "Engineering Done",
-            "id": "10075",
-            "statusCategory": {
-              "self": "https://learningaz.atlassian.net/rest/api/3/statuscategory/4",
-              "id": 4,
-              "key": "indeterminate",
-              "colorName": "yellow",
-              "name": "In Progress"
-            }
-          },
-          "labels": []
         }
       },
       {
@@ -11256,53 +11296,40 @@
       },
       {
         "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
-        "id": "57443",
-        "self": "https://learningaz.atlassian.net/rest/api/3/issue/57443",
-        "key": "LEM-7827",
+        "id": "57613",
+        "self": "https://learningaz.atlassian.net/rest/api/3/issue/57613",
+        "key": "LEM-7841",
         "fields": {
-          "summary": "KAZ [Web] - Reading Custom Assignments - Students are returned to Assignments page when trying to open certain activities",
+          "summary": "Update FIN lower environments to point to prod help files",
           "issuetype": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10074",
-            "id": "10074",
-            "description": "A problem which impairs or prevents the functions of the product. (Migrated on 11 Apr 2026 13:21 UTC)",
-            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
-            "name": "Bug",
+            "self": "https://learningaz.atlassian.net/rest/api/3/issuetype/10037",
+            "id": "10037",
+            "description": "Stories track functionality or features expressed as user goals.",
+            "iconUrl": "https://learningaz.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+            "name": "Story",
             "subtask": false,
-            "avatarId": 10303,
+            "avatarId": 10315,
             "hierarchyLevel": 0
           },
-          "created": "2026-06-08T11:43:45.030-0400",
+          "created": "2026-06-16T09:56:18.288-0400",
           "resolutiondate": null,
           "fixVersions": [
             {
-              "self": "https://learningaz.atlassian.net/rest/api/3/version/17347",
-              "id": "17347",
-              "name": "clt_26_06_003",
+              "self": "https://learningaz.atlassian.net/rest/api/3/version/13092",
+              "id": "13092",
+              "description": "July 2026 Monthly Release",
+              "name": "July 2026 Monthly Release",
               "archived": false,
               "released": false,
-              "releaseDate": "2026-06-17"
+              "releaseDate": "2026-07-01"
             }
           ],
-          "assignee": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/user?accountId=70121%3Ad1929a69-5a61-4be4-9760-1061275a05f3",
-            "accountId": "70121:d1929a69-5a61-4be4-9760-1061275a05f3",
-            "emailAddress": "mario.ball@learninga-z.com",
-            "avatarUrls": {
-              "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/48",
-              "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/24",
-              "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/16",
-              "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/70121:d1929a69-5a61-4be4-9760-1061275a05f3/78c6bcb1-88f8-4176-b1c2-6903108c1128/32"
-            },
-            "displayName": "Mario Ball",
-            "active": true,
-            "timeZone": "America/New_York",
-            "accountType": "atlassian"
-          },
+          "assignee": null,
           "priority": {
-            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10002",
-            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/major.svg",
-            "name": "Major",
-            "id": "10002"
+            "self": "https://learningaz.atlassian.net/rest/api/3/priority/10009",
+            "iconUrl": "https://learningaz.atlassian.net/images/icons/priorities/critical.svg",
+            "name": "Triage",
+            "id": "10009"
           },
           "status": {
             "self": "https://learningaz.atlassian.net/rest/api/3/status/10090",
@@ -11318,10 +11345,7 @@
               "name": "To Do"
             }
           },
-          "labels": [
-            "KAZ",
-            "pager"
-          ]
+          "labels": []
         }
       },
       {
@@ -19055,7 +19079,7 @@
     ]
   },
   "mvp_totals": {
-    "LEF": 134,
+    "LEF": 135,
     "LEF_lookahead_counts": {
       "AugustPrio": 54
     },
@@ -29681,24 +29705,24 @@
         }
       }
     ],
-    "LEM_backlog": 535
+    "LEM_backlog": 533
   },
   "stats": {
     "LEF": {
       "done": 57,
-      "inprogress": 13,
-      "review": 11,
-      "open": 48,
-      "abandoned": 5,
-      "total": 134
+      "inprogress": 15,
+      "review": 12,
+      "open": 45,
+      "abandoned": 6,
+      "total": 135
     },
     "LEM": {
-      "done": 15,
-      "inprogress": 6,
+      "done": 16,
+      "inprogress": 5,
       "review": 3,
-      "open": 131,
+      "open": 130,
       "abandoned": 6,
-      "total": 161
+      "total": 160
     },
     "LRF": {
       "done": 8,
