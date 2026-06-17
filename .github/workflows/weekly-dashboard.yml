@@ -16,6 +16,10 @@ on:
 permissions:
   contents: write            # Needs to commit the generated HTML back to the repo
 
+concurrency:
+  group: weekly-dashboard-generation
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
