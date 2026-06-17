@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 Weekly Engineering Dashboard Generator
 Queries Jira for LEF, LEM, LRF boards and generates a styled HTML dashboard.
@@ -15,6 +16,7 @@ import json
 import base64
 import re
 import datetime
+from typing import List, Optional, Tuple
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -28,6 +30,16 @@ JIRA_HOST     = os.environ.get("JIRA_INSTANCE", "learningaz.atlassian.net")
 PROJECTS      = ["LEF", "LEM", "LRF"]
 DATE_OVERRIDE = os.environ.get("DASHBOARD_DATE", "").strip()
 CONFIG_FILE = "dashboard_config.json"
+STATS_FILE = "stats.json"
+SNAPSHOT_DIR = "snapshots"
+SNAPSHOT_VERSION = 1
+SNAPSHOT_SOURCE_LIVE = "live"
+SNAPSHOT_SOURCE_RECONSTRUCTED = "reconstructed"
+SNAPSHOT_RUN_HOUR_UTC = 12
+SNAPSHOT_RUN_MINUTE_UTC = 30
+DEFAULT_JIRA_FIELDS = (
+    "summary,status,assignee,priority,issuetype,labels,fixVersions,created,resolutiondate"
+)
 
 
 class JiraQueryError(RuntimeError):
@@ -48,7 +60,7 @@ def parse_dashboard_date(raw: str = "") -> datetime.date:
     if not raw:
         return datetime.date.today()
     try:
-        return datetime.date.fromisoformat(raw)
+        return datetime.datetime.strptime(raw, "%Y-%m-%d").date()
     except ValueError as exc:
         raise ValueError(
             f"Invalid DASHBOARD_DATE '{raw}'. Expected YYYY-MM-DD, for example 2026-06-10."
@@ -212,7 +224,7 @@ def jira_get(path: str, params: dict = None) -> dict:
 
 
 def jira_total(jql: str) -> int:
-    data = jira_get("search/jql", {
+    data = jira_get("search", {
         "jql": jql,
         "startAt": 0,
         "maxResults": 1,
@@ -224,16 +236,23 @@ def jira_total(jql: str) -> int:
     return len(jira_search_issues(jql, fields="summary"))
 
 
-def jira_search_issues(jql: str, fields: str = "summary,status,assignee,priority,issuetype,labels") -> list:
+def jira_search_issues(
+    jql: str,
+    fields: str = DEFAULT_JIRA_FIELDS,
+    expand: str = "",
+) -> list:
     issues = []
     start = 0
     while True:
-        data = jira_get("search/jql", {
+        params = {
             "jql": jql,
             "startAt": start,
             "maxResults": 100,
             "fields": fields,
-        })
+        }
+        if expand:
+            params["expand"] = expand
+        data = jira_get("search", params)
         batch = data.get("issues", [])
         issues.extend(batch)
         start += len(batch)
@@ -247,6 +266,27 @@ def jira_search_issues(jql: str, fields: str = "summary,status,assignee,priority
     return issues
 
 
+def jira_issue_changelog(issue_key: str) -> list:
+    histories = []
+    start = 0
+    while True:
+        data = jira_get(f"issue/{issue_key}/changelog", {
+            "startAt": start,
+            "maxResults": 100,
+        })
+        batch = data.get("values", [])
+        histories.extend(batch)
+        start += len(batch)
+        total = data.get("total")
+        if not batch:
+            break
+        if total is not None and start >= total:
+            break
+        if total is None and len(batch) < 100:
+            break
+    return histories
+
+
 def validate_jira_access():
     me = jira_get("myself")
     if not me.get("accountId"):
@@ -258,6 +298,218 @@ def validate_jira_access():
 
 def jql_quote(value: str) -> str:
     return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def snapshot_path(slug: str) -> str:
+    return os.path.join(SNAPSHOT_DIR, f"{slug}.json")
+
+
+def load_snapshot(slug: str) -> Optional[dict]:
+    try:
+        with open(snapshot_path(slug), encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+    except json.JSONDecodeError as exc:
+        raise JiraQueryError(f"Invalid JSON in saved snapshot {snapshot_path(slug)}: {exc}") from exc
+
+
+def save_snapshot(slug: str, payload: dict):
+    os.makedirs(SNAPSHOT_DIR, exist_ok=True)
+    with open(snapshot_path(slug), "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+
+
+def snapshot_cutoff_utc(day: datetime.date) -> datetime.datetime:
+    return datetime.datetime(
+        day.year,
+        day.month,
+        day.day,
+        SNAPSHOT_RUN_HOUR_UTC,
+        SNAPSHOT_RUN_MINUTE_UTC,
+        tzinfo=datetime.timezone.utc,
+    )
+
+
+def parse_jira_datetime(raw: Optional[str]) -> Optional[datetime.datetime]:
+    if not raw:
+        return None
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z"):
+        try:
+            return datetime.datetime.strptime(raw, fmt)
+        except ValueError:
+            continue
+    raise JiraQueryError(f"Unsupported Jira timestamp format: {raw}")
+
+
+def parse_multi_value_string(raw: Optional[str]) -> List[str]:
+    if not raw:
+        return []
+    if "," in raw:
+        parts = [part.strip() for part in raw.split(",")]
+    else:
+        parts = [part.strip() for part in raw.split()]
+    return [part for part in parts if part]
+
+
+def status_category_key_for(status_name: str) -> str:
+    bucket = STATUS_MAP.get((status_name or "").lower().strip())
+    if bucket == "done":
+        return "done"
+    if bucket in {"inprogress", "review"}:
+        return "indeterminate"
+    return "new"
+
+
+def issue_bucket(issue: dict) -> str:
+    status_field = issue["fields"]["status"]
+    return classify_status(
+        status_field["name"],
+        status_field.get("statusCategory", {}).get("key", ""),
+    )
+
+
+def issue_is_subtask(issue: dict) -> bool:
+    issuetype = (issue["fields"].get("issuetype") or {}).get("name", "")
+    return issuetype.lower() == "sub-task"
+
+
+def issue_has_label(issue: dict, label: str) -> bool:
+    return label in (issue["fields"].get("labels") or [])
+
+
+def issue_fix_version_names(issue: dict) -> List[str]:
+    return [
+        version.get("name")
+        for version in issue["fields"].get("fixVersions") or []
+        if version.get("name")
+    ]
+
+
+def issue_matches_release(issue: dict, release: dict) -> bool:
+    if issue_is_subtask(issue) and not LEF_INCLUDE_SUBTASKS:
+        return False
+    fix_version = release.get("fix_version")
+    label = release.get("label")
+    matches_fix_version = bool(fix_version and fix_version in issue_fix_version_names(issue))
+    matches_label = bool(label and issue_has_label(issue, label))
+    return matches_fix_version or matches_label
+
+
+def revert_fix_version_change(current_names: List[str], item: dict) -> List[str]:
+    names = set(current_names)
+    to_value = item.get("toString")
+    from_value = item.get("fromString")
+    if to_value:
+        names.discard(to_value)
+    if from_value:
+        names.add(from_value)
+    return sorted(names)
+
+
+def build_historical_issue(issue: dict, cutoff: datetime.datetime) -> Optional[dict]:
+    fields = json.loads(json.dumps(issue["fields"]))
+    created_at = parse_jira_datetime(fields.get("created"))
+    if created_at and created_at > cutoff:
+        return None
+
+    labels = list(fields.get("labels") or [])
+    fix_versions = issue_fix_version_names({"fields": fields})
+    status_name = (fields.get("status") or {}).get("name", "")
+    assignee = fields.get("assignee")
+    histories = jira_issue_changelog(issue["key"])
+
+    for history in sorted(
+        histories,
+        key=lambda entry: parse_jira_datetime(entry.get("created")) or cutoff,
+        reverse=True,
+    ):
+        changed_at = parse_jira_datetime(history.get("created"))
+        if changed_at is None or changed_at <= cutoff:
+            continue
+        for item in history.get("items", []):
+            field_name = (item.get("field") or "").lower()
+            if field_name == "status" and item.get("fromString"):
+                status_name = item["fromString"]
+            elif field_name == "assignee":
+                assignee = (
+                    {"displayName": item["fromString"]}
+                    if item.get("fromString")
+                    else None
+                )
+            elif field_name == "labels":
+                labels = parse_multi_value_string(item.get("fromString"))
+            elif field_name in {"fix version", "fix versions", "fixversions"}:
+                fix_versions = revert_fix_version_change(fix_versions, item)
+            elif field_name == "summary" and item.get("fromString"):
+                fields["summary"] = item["fromString"]
+            elif field_name == "priority" and item.get("fromString"):
+                fields["priority"] = {"name": item["fromString"]}
+
+    fields["labels"] = sorted(set(labels))
+    fields["fixVersions"] = [{"name": name} for name in sorted(set(fix_versions))]
+    fields["assignee"] = assignee
+    fields["status"] = {
+        "name": status_name,
+        "statusCategory": {"key": status_category_key_for(status_name)},
+    }
+    return {"key": issue["key"], "fields": fields, "_histories": histories}
+
+
+def issue_transitioned_to_done_in_window(
+    issue: dict,
+    window_start: datetime.datetime,
+    window_end: datetime.datetime,
+) -> bool:
+    resolution_date = parse_jira_datetime(issue["fields"].get("resolutiondate"))
+    if resolution_date and window_start <= resolution_date <= window_end:
+        return True
+
+    for history in issue.get("_histories", []):
+        changed_at = parse_jira_datetime(history.get("created"))
+        if changed_at is None or changed_at < window_start or changed_at > window_end:
+            continue
+        for item in history.get("items", []):
+            if (item.get("field") or "").lower() != "status":
+                continue
+            if classify_status(item.get("toString") or "") == "done":
+                return True
+    return False
+
+
+def sort_dashboard_issues(issues: List[dict]) -> List[dict]:
+    bucket_order = {
+        "inprogress": 0,
+        "review": 1,
+        "open": 2,
+        "done": 3,
+        "abandoned": 4,
+    }
+    priority_order = {
+        "highest": 0,
+        "high": 1,
+        "medium": 2,
+        "low": 3,
+        "lowest": 4,
+    }
+
+    def _sort_key(issue: dict):
+        bucket = issue_bucket(issue)
+        priority_name = ((issue["fields"].get("priority") or {}).get("name") or "").lower()
+        return (
+            bucket_order.get(bucket, 99),
+            priority_order.get(priority_name, 99),
+            issue["key"],
+        )
+
+    return sorted(issues, key=_sort_key)
+
+
+def strip_history(issues: List[dict]) -> List[dict]:
+    return [
+        {"key": issue["key"], "fields": issue["fields"]}
+        for issue in issues
+    ]
 
 
 def lef_issue_type_clause() -> str:
@@ -308,6 +560,113 @@ def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
         statuses = sorted(set(i["fields"]["status"]["name"] for i in issues))
         print(f"  {project} statuses found: {', '.join(statuses)}")
     return issues
+
+
+def historical_candidate_issues(project: str, today: datetime.date) -> List[dict]:
+    cutoff = snapshot_cutoff_utc(today)
+    raw_issues = jira_search_issues(
+        f'project = {project} AND created <= "{today.strftime("%Y-%m-%d")}" ORDER BY created ASC',
+        fields=DEFAULT_JIRA_FIELDS,
+    )
+    issues = []
+    for issue in raw_issues:
+        historical = build_historical_issue(issue, cutoff)
+        if historical is not None:
+            issues.append(historical)
+    print(f"  {project}: reconstructed {len(issues)} issues as of {cutoff.isoformat()}")
+    return issues
+
+
+def historical_non_lef_board_issues(project: str, issues: List[dict], today: datetime.date) -> List[dict]:
+    cutoff = snapshot_cutoff_utc(today)
+    month_start = datetime.datetime(
+        today.year,
+        today.month,
+        1,
+        SNAPSHOT_RUN_HOUR_UTC,
+        SNAPSHOT_RUN_MINUTE_UTC,
+        tzinfo=datetime.timezone.utc,
+    )
+    selected = []
+    for issue in issues:
+        if issue_is_subtask(issue):
+            continue
+        if issue_bucket(issue) != "done":
+            selected.append(issue)
+            continue
+        if issue_transitioned_to_done_in_window(issue, month_start, cutoff):
+            selected.append(issue)
+    return sort_dashboard_issues(selected)
+
+
+def reconstruct_snapshot_from_jira(today: datetime.date) -> Tuple[dict, dict]:
+    candidates = {
+        project: historical_candidate_issues(project, today)
+        for project in PROJECTS
+    }
+
+    lef_candidates = candidates["LEF"]
+    all_issues = {
+        "LEF": sort_dashboard_issues([
+            issue
+            for issue in lef_candidates
+            if issue_matches_release(issue, LEF_ACTIVE_RELEASE)
+        ]),
+        "LEM": historical_non_lef_board_issues("LEM", candidates["LEM"], today),
+        "LRF": historical_non_lef_board_issues("LRF", candidates["LRF"], today),
+    }
+
+    lef_label_counts = {}
+    for release in [LEF_ACTIVE_RELEASE, *LEF_LOOKAHEAD_RELEASES]:
+        label = release["label"]
+        lef_label_counts[label] = sum(
+            1 for issue in lef_candidates if issue_matches_release(issue, release)
+        )
+        print(f"  LEF {label} total: {lef_label_counts[label]}")
+
+    mobile_issues = sort_dashboard_issues([
+        issue
+        for issue in lef_candidates
+        if issue_has_label(issue, LEF_MOBILE_LABEL)
+        and (LEF_INCLUDE_SUBTASKS or not issue_is_subtask(issue))
+    ])
+    print(f"  LEF Mobile total: {len(mobile_issues)} issues")
+
+    overall_done = sum(
+        1
+        for issue in lef_candidates
+        if issue_bucket(issue) == "done"
+        and (LEF_INCLUDE_SUBTASKS or not issue_is_subtask(issue))
+    )
+    print(f"  LEF overall done total: {overall_done}")
+
+    lem_backlog = sum(
+        1
+        for issue in candidates["LEM"]
+        if not issue_is_subtask(issue)
+        and issue_bucket(issue) not in {"done", "abandoned"}
+    )
+    print(f"  LEM backlog total: {lem_backlog}")
+
+    mvp_totals = {
+        "LEF": lef_label_counts.get(LEF_ACTIVE_RELEASE["label"], len(all_issues["LEF"])),
+        "LEF_lookahead_counts": {
+            release["label"]: lef_label_counts[release["label"]]
+            for release in LEF_LOOKAHEAD_RELEASES
+            if release["label"] in lef_label_counts
+        },
+        "LEF_overall_done": overall_done,
+        "LEF_mobile_issues": mobile_issues,
+        "LEM_backlog": lem_backlog,
+    }
+    return (
+        {project: strip_history(issues) for project, issues in all_issues.items()},
+        {"LEF_mobile_issues": strip_history(mvp_totals["LEF_mobile_issues"]), **{
+            key: value
+            for key, value in mvp_totals.items()
+            if key != "LEF_mobile_issues"
+        }},
+    )
 
 def fetch_lef_release_counts() -> dict:
     counts = {}
@@ -709,11 +1068,6 @@ def project_card(project: str, issues: list, prev: dict = None, mvp_total: int =
         f'</div>'
     )
 
-# ---------------------------------------------------------------------------
-# Week-over-week stats persistence
-# ---------------------------------------------------------------------------
-STATS_FILE = "stats.json"
-
 def load_stats() -> dict:
     try:
         with open(STATS_FILE) as f:
@@ -734,6 +1088,43 @@ def get_prev_stats(slug: str) -> tuple:
     if not dates:
         return None, {}
     return dates[-1], data[dates[-1]]
+
+
+def build_current_stats(all_issues: dict) -> dict:
+    current_stats = {}
+    for proj, issues in all_issues.items():
+        buckets = bucket_issues(issues)
+        current_stats[proj] = {
+            "done": len(buckets["done"]),
+            "inprogress": len(buckets["inprogress"]),
+            "review": len(buckets["review"]),
+            "open": len(buckets["open"]),
+            "abandoned": len(buckets["abandoned"]),
+            "total": sum(len(value) for value in buckets.values()),
+        }
+    return current_stats
+
+
+def snapshot_payload(
+    slug: str,
+    today: datetime.date,
+    source: str,
+    all_issues: dict,
+    mvp_totals: dict,
+    stats: dict,
+) -> dict:
+    return {
+        "version": SNAPSHOT_VERSION,
+        "slug": slug,
+        "dashboard_date": today.isoformat(),
+        "cutoff_utc": snapshot_cutoff_utc(today).isoformat(),
+        "source": source,
+        "generated_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "config": DASHBOARD_CONFIG,
+        "all_issues": all_issues,
+        "mvp_totals": mvp_totals,
+        "stats": stats,
+    }
 
 def actions_card(all_issues: dict, mvp_total: int, lookahead_counts: dict, mobile_issues: list) -> str:
     lef_b   = bucket_issues(all_issues["LEF"])
@@ -906,15 +1297,21 @@ def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_tot
     )
 
 def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
-                prev_stats: dict = None, prev_slug: str = None, mvp_totals: dict = None) -> str:
+                prev_stats: dict = None, prev_slug: str = None, mvp_totals: dict = None,
+                snapshot_source: str = SNAPSHOT_SOURCE_LIVE) -> str:
     if today is None:
         today = datetime.date.today()
-    label     = active_mvp_label(today)
-    rel_info  = next_release_info(today)
-    banner    = release_banner_html(rel_info)
-    boards    = " &middot; ".join(PROJECTS)
-    prev_stats  = prev_stats  or {}
-    mvp_totals  = mvp_totals  or {}
+    label       = active_mvp_label(today)
+    rel_info    = next_release_info(today)
+    banner      = release_banner_html(rel_info)
+    boards      = " &middot; ".join(PROJECTS)
+    prev_stats  = prev_stats or {}
+    mvp_totals  = mvp_totals or {}
+    source_text = (
+        "Reconstructed from Jira history"
+        if snapshot_source == SNAPSHOT_SOURCE_RECONSTRUCTED
+        else "Live Jira capture"
+    )
 
     def _card(proj):
         p = prev_stats.get(proj)
@@ -956,7 +1353,7 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
   </div>
   <div class="meta">
     <div>Week of {h(date_str)}</div>
-    <div>Auto-generated from Jira</div>
+    <div>{h(source_text)}</div>
   </div>
 </header>
 
@@ -1023,61 +1420,87 @@ def main():
     filename   = f"{file_slug}_weekly_dashboard.html"
     label      = active_mvp_label(today)
     prev_slug, prev_stats = get_prev_stats(file_slug)
+    saved_snapshot = load_snapshot(file_slug)
+    use_saved_snapshot = saved_snapshot is not None and today < datetime.date.today()
+    snapshot_source = SNAPSHOT_SOURCE_LIVE
 
     try:
-        validate_jira_access()
+        if use_saved_snapshot:
+            print(f"Using saved snapshot for {file_slug}")
+            all_issues = saved_snapshot.get("all_issues", {})
+            mvp_totals = saved_snapshot.get("mvp_totals", {})
+            snapshot_source = saved_snapshot.get("source", SNAPSHOT_SOURCE_LIVE)
+        else:
+            validate_jira_access()
 
-        print(f"Fetching Jira data for {', '.join(PROJECTS)} ...")
-        all_issues = {}
-        for proj in PROJECTS:
-            all_issues[proj] = get_active_sprint_issues(proj, today=today)
+            if saved_snapshot is None and today < datetime.date.today():
+                print(f"Reconstructing Jira snapshot for {date_str} ...")
+                all_issues, mvp_totals = reconstruct_snapshot_from_jira(today)
+                snapshot_source = SNAPSHOT_SOURCE_RECONSTRUCTED
+            else:
+                print(f"Fetching Jira data for {', '.join(PROJECTS)} ...")
+                all_issues = {}
+                for proj in PROJECTS:
+                    all_issues[proj] = get_active_sprint_issues(proj, today=today)
 
-        validate_issue_counts(all_issues, prev_stats)
+                validate_issue_counts(all_issues, prev_stats)
 
-        # Fetch LEF release and mobile tracking counts
-        mvp_totals: dict = {}
-        print(f"Fetching {label} total count for LEF...")
-        lef_label_counts = fetch_lef_release_counts()
-        mvp_totals["LEF"] = lef_label_counts.get(label, len(all_issues["LEF"]))
-        mvp_totals["LEF_lookahead_counts"] = {
-            release["label"]: lef_label_counts[release["label"]]
-            for release in LEF_LOOKAHEAD_RELEASES
-            if release["label"] in lef_label_counts
-        }
-        mvp_totals["LEF_overall_done"] = jira_total(
-            f'project = LEF AND status = "Done"{lef_issue_type_clause()}'
-        )
-        print(f"  LEF overall done total: {mvp_totals['LEF_overall_done']}")
-        mvp_totals["LEF_mobile_issues"] = fetch_lef_mobile_issues()
+                # Fetch LEF release and mobile tracking counts
+                mvp_totals = {}
+                print(f"Fetching {label} total count for LEF...")
+                lef_label_counts = fetch_lef_release_counts()
+                mvp_totals["LEF"] = lef_label_counts.get(label, len(all_issues["LEF"]))
+                mvp_totals["LEF_lookahead_counts"] = {
+                    release["label"]: lef_label_counts[release["label"]]
+                    for release in LEF_LOOKAHEAD_RELEASES
+                    if release["label"] in lef_label_counts
+                }
+                mvp_totals["LEF_overall_done"] = jira_total(
+                    f'project = LEF AND status = "Done"{lef_issue_type_clause()}'
+                )
+                print(f"  LEF overall done total: {mvp_totals['LEF_overall_done']}")
+                mvp_totals["LEF_mobile_issues"] = fetch_lef_mobile_issues()
 
-        # Fetch LEM total backlog (all non-abandoned tickets)
-        print("Fetching LEM backlog total...")
-        mvp_totals["LEM_backlog"] = jira_total(
-            "project = LEM AND statusCategory != Done AND status != Abandoned"
-        )
-        print(f"  LEM backlog total: {mvp_totals['LEM_backlog']}")
+                # Fetch LEM total backlog (all non-abandoned tickets)
+                print("Fetching LEM backlog total...")
+                mvp_totals["LEM_backlog"] = jira_total(
+                    "project = LEM AND statusCategory != Done AND status != Abandoned"
+                )
+                print(f"  LEM backlog total: {mvp_totals['LEM_backlog']}")
     except JiraQueryError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    html = render_html(all_issues, date_str, today, prev_stats=prev_stats, prev_slug=prev_slug, mvp_totals=mvp_totals)
+    html = render_html(
+        all_issues,
+        date_str,
+        today,
+        prev_stats=prev_stats,
+        prev_slug=prev_slug,
+        mvp_totals=mvp_totals,
+        snapshot_source=snapshot_source,
+    )
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"Generated {filename}")
 
-    # Save current stats for next week's deltas
-    current_stats = {}
-    for proj, issues in all_issues.items():
-        b = bucket_issues(issues)
-        current_stats[proj] = {
-            "done": len(b["done"]), "inprogress": len(b["inprogress"]),
-            "review": len(b["review"]), "open": len(b["open"]),
-            "abandoned": len(b["abandoned"]),
-            "total": sum(len(v) for v in b.values()),
-        }
+    current_stats = build_current_stats(all_issues)
     save_stats(file_slug, current_stats)
     print(f"Saved stats snapshot → {STATS_FILE}")
+
+    save_snapshot(
+        file_slug,
+        snapshot_payload(
+            file_slug,
+            today,
+            snapshot_source,
+            all_issues,
+            mvp_totals,
+            current_stats,
+        ),
+    )
+    print(f"Saved raw snapshot → {snapshot_path(file_slug)}")
 
     update_index(filename, date_str)
 

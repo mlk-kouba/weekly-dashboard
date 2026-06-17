@@ -93,7 +93,11 @@ Examples:
 - `260514-weekly-dashboard.html` — May 14, 2026
 - `260521-weekly-dashboard.html` — May 21, 2026
 
-For a missed Wednesday, run the workflow manually with the `dashboard_date` input set to the desired week, for example `2026-06-10`.
+Each generated week now saves a raw snapshot in `snapshots/yymmdd.json`. If you rerun a past week and that snapshot already exists, the dashboard is rebuilt from the saved snapshot instead of live Jira data.
+
+For a missed Wednesday with **no** saved snapshot yet, run the workflow manually with the `dashboard_date` input set to the desired week, for example `2026-06-10`. The generator will reconstruct the board from Jira issue history and then save that reconstructed snapshot so later reruns stay consistent.
+
+The dashboard header shows whether a page came from a **Live Jira capture** or was **Reconstructed from Jira history**.
 
 ---
 
