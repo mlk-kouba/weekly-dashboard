@@ -1,0 +1,64 @@
+name: Weekly Dashboard Schedule Watchdog
+
+on:
+  schedule:
+    - cron: '15 13 * * 3'  # Every Wednesday at 9:15am ET / 1:15pm UTC
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  verify-scheduled-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify scheduled dashboard run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          today=$(date -u +%F)
+          title="Weekly dashboard cron did not run on ${today}"
+          issue_body=$(cat <<EOF
+          The **Generate Weekly Dashboard** workflow did not record a \`schedule\` run on **${today}**.
+
+          Please trigger \`.github/workflows/weekly-dashboard.yml\` manually and confirm the weekly dashboard is current.
+
+          _Created automatically by the weekly dashboard watchdog._
+          EOF
+          )
+
+          scheduled_runs_json=$(gh run list \
+            --repo "$REPO" \
+            --workflow weekly-dashboard.yml \
+            --event schedule \
+            --limit 20 \
+            --json databaseId,createdAt,conclusion,status,url)
+
+          scheduled_run_count=$(printf '%s' "$scheduled_runs_json" | jq --arg today "$today" '[.[] | select(.createdAt | startswith($today))] | length')
+
+          if [ "$scheduled_run_count" -gt 0 ]; then
+            echo "Found $scheduled_run_count scheduled dashboard run(s) for $today."
+            exit 0
+          fi
+
+          existing_issue_number=$(gh issue list \
+            --repo "$REPO" \
+            --state open \
+            --search "\"${title}\" in:title" \
+            --json number,title \
+            --jq '.[0].number // empty')
+
+          if [ -n "$existing_issue_number" ]; then
+            echo "Issue #$existing_issue_number already exists for today's missed cron run."
+          else
+            gh issue create \
+              --repo "$REPO" \
+              --title "$title" \
+              --body "$issue_body"
+          fi
+
+          echo "Weekly dashboard scheduled run is missing for $today."
+          exit 1
