@@ -224,7 +224,7 @@ def jira_get(path: str, params: dict = None) -> dict:
 
 
 def jira_total(jql: str) -> int:
-    data = jira_get("search/jql", {
+    data = jira_get("search", {
         "jql": jql,
         "startAt": 0,
         "maxResults": 1,
@@ -243,6 +243,7 @@ def jira_search_issues(
 ) -> list:
     issues = []
     start = 0
+    seen_pages = set()
     while True:
         params = {
             "jql": jql,
@@ -252,17 +253,32 @@ def jira_search_issues(
         }
         if expand:
             params["expand"] = expand
-        data = jira_get("search/jql", params)
+        data = jira_get("search", params)
         batch = data.get("issues", [])
+        page_signature = tuple(issue.get("key") for issue in batch)
+        if batch and page_signature in seen_pages:
+            raise JiraQueryError(
+                "Jira search returned a repeated page while paging results. "
+                "Refusing to continue because the response would loop forever."
+            )
+        seen_pages.add(page_signature)
         issues.extend(batch)
-        start += len(batch)
+        response_start = data.get("startAt", start)
+        response_max = data.get("maxResults", len(batch))
+        next_start = response_start + len(batch)
         total = data.get("total")
         if not batch:
             break
-        if total is not None and start >= total:
+        if total is not None and next_start >= total:
             break
-        if total is None and len(batch) < 100:
+        if len(batch) < response_max:
             break
+        if next_start <= start:
+            raise JiraQueryError(
+                "Jira search pagination did not advance to the next page. "
+                "Refusing to continue because the response would loop forever."
+            )
+        start = next_start
     return issues
 
 
