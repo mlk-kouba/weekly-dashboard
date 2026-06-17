@@ -1081,6 +1081,11 @@ def save_stats(slug: str, per_project: dict):
     with open(STATS_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
+
+def has_saved_stats(slug: str) -> bool:
+    data = load_stats()
+    return slug in data
+
 def get_prev_stats(slug: str) -> tuple:
     """Return (prev_slug, per-project bucket counts) from the most recent previous run."""
     data = load_stats()
@@ -1406,10 +1411,6 @@ def update_index(new_filename: str, date_str: str):
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    if not JIRA_EMAIL or not JIRA_TOKEN:
-        print("ERROR: JIRA_EMAIL and JIRA_API_TOKEN environment variables are required.", file=sys.stderr)
-        sys.exit(1)
-
     try:
         today = parse_dashboard_date(DATE_OVERRIDE)
     except ValueError as exc:
@@ -1422,7 +1423,22 @@ def main():
     prev_slug, prev_stats = get_prev_stats(file_slug)
     saved_snapshot = load_snapshot(file_slug)
     use_saved_snapshot = saved_snapshot is not None and today < datetime.date.today()
+    reuse_existing_dashboard = (
+        saved_snapshot is None
+        and today < datetime.date.today()
+        and os.path.exists(filename)
+        and has_saved_stats(file_slug)
+    )
     snapshot_source = SNAPSHOT_SOURCE_LIVE
+
+    if reuse_existing_dashboard:
+        print(f"Reusing existing dashboard artifacts for {file_slug}")
+        update_index(filename, date_str)
+        return
+
+    if not JIRA_EMAIL or not JIRA_TOKEN:
+        print("ERROR: JIRA_EMAIL and JIRA_API_TOKEN environment variables are required.", file=sys.stderr)
+        sys.exit(1)
 
     try:
         if use_saved_snapshot:

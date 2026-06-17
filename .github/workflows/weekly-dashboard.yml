@@ -42,7 +42,7 @@ jobs:
           JIRA_INSTANCE:   learningaz.atlassian.net
           DASHBOARD_DATE:  ${{ github.event.inputs.dashboard_date || github.event.client_payload.dashboard_date }}
         run: |
-          python scripts/generate_dashboard.py
+          python -u scripts/generate_dashboard.py
           slug=$(python -c 'import datetime, os; raw = (os.environ.get("DASHBOARD_DATE") or "").strip(); day = datetime.date.fromisoformat(raw) if raw else datetime.date.today(); print(day.strftime("%y%m%d"))')
           echo "dashboard_slug=$slug" >> "$GITHUB_OUTPUT"
           echo "dashboard_file=${slug}_weekly_dashboard.html" >> "$GITHUB_OUTPUT"
