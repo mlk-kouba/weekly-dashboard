@@ -79,20 +79,20 @@
   },
   "260617": {
     "LEF": {
-      "done": 52,
-      "inprogress": 10,
-      "review": 0,
-      "open": 38,
-      "abandoned": 0,
-      "total": 100
+      "done": 57,
+      "inprogress": 13,
+      "review": 11,
+      "open": 48,
+      "abandoned": 5,
+      "total": 134
     },
     "LEM": {
       "done": 15,
       "inprogress": 6,
-      "review": 2,
-      "open": 71,
+      "review": 3,
+      "open": 131,
       "abandoned": 6,
-      "total": 100
+      "total": 161
     },
     "LRF": {
       "done": 8,
