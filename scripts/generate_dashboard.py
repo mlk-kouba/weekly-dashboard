@@ -224,7 +224,7 @@ def jira_get(path: str, params: dict = None) -> dict:
 
 
 def jira_total(jql: str) -> int:
-    data = jira_get("search", {
+    data = jira_get("search/jql", {
         "jql": jql,
         "startAt": 0,
         "maxResults": 1,
@@ -252,7 +252,7 @@ def jira_search_issues(
         }
         if expand:
             params["expand"] = expand
-        data = jira_get("search", params)
+        data = jira_get("search/jql", params)
         batch = data.get("issues", [])
         issues.extend(batch)
         start += len(batch)
