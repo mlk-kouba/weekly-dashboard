@@ -37,6 +37,7 @@ SNAPSHOT_SOURCE_LIVE = "live"
 SNAPSHOT_SOURCE_RECONSTRUCTED = "reconstructed"
 SNAPSHOT_RUN_HOUR_UTC = 12
 SNAPSHOT_RUN_MINUTE_UTC = 30
+TRACKING_START_DATE = datetime.date(2026, 1, 1)
 DEFAULT_JIRA_FIELDS = (
     "summary,status,assignee,priority,issuetype,labels,fixVersions,created,resolutiondate"
 )
@@ -70,6 +71,13 @@ def parse_dashboard_date(raw: str = "") -> datetime.date:
 def release_label_display(label: str) -> str:
     release = RELEASES_BY_LABEL.get(label, {})
     return release.get("display", label)
+
+
+def created_since_clause(end_date: Optional[datetime.date] = None) -> str:
+    clauses = [f'created >= "{TRACKING_START_DATE.strftime("%Y-%m-%d")}"']
+    if end_date is not None:
+        clauses.append(f'created <= "{end_date.strftime("%Y-%m-%d")}"')
+    return " AND ".join(clauses)
 
 
 DASHBOARD_CONFIG = load_dashboard_config()
@@ -556,7 +564,8 @@ def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
     if meta["mvp_label"]:
         # LEF: use the configured release selectors as the source of truth.
         jql = (
-            f"project = {project} AND {lef_release_clause(LEF_ACTIVE_RELEASE)} "
+            f"project = {project} AND {created_since_clause()} "
+            f"AND {lef_release_clause(LEF_ACTIVE_RELEASE)} "
             f'ORDER BY status ASC, priority DESC'
         )
     else:
@@ -565,7 +574,7 @@ def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
         month_start = d.replace(day=1).strftime("%Y-%m-%d")
         day_after = (d + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         jql = (
-            f'project = {project} AND issuetype != Sub-task AND ('
+            f'project = {project} AND issuetype != Sub-task AND {created_since_clause()} AND ('
             f'(statusCategory != Done AND updatedDate >= "{year_start}" AND updatedDate < "{day_after}") OR '
             f'(statusCategory = Done AND updatedDate >= "{month_start}" AND updatedDate < "{day_after}")'
             f') ORDER BY status ASC, updated DESC'
@@ -582,7 +591,7 @@ def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
 def historical_candidate_issues(project: str, today: datetime.date) -> List[dict]:
     cutoff = snapshot_cutoff_utc(today)
     raw_issues = jira_search_issues(
-        f'project = {project} AND created <= "{today.strftime("%Y-%m-%d")}" ORDER BY created ASC',
+        f'project = {project} AND {created_since_clause(today)} ORDER BY created ASC',
         fields=DEFAULT_JIRA_FIELDS,
     )
     issues = []
@@ -689,7 +698,7 @@ def fetch_lef_release_counts() -> dict:
     counts = {}
     for release in [LEF_ACTIVE_RELEASE, *LEF_LOOKAHEAD_RELEASES]:
         label = release["label"]
-        total = jira_total(f"project = LEF AND {lef_release_clause(release)}")
+        total = jira_total(f"project = LEF AND {created_since_clause()} AND {lef_release_clause(release)}")
         counts[label] = total
         print(f"  LEF {label} total: {total}")
     return counts
@@ -697,7 +706,8 @@ def fetch_lef_release_counts() -> dict:
 
 def fetch_lef_mobile_issues() -> list:
     issues = jira_search_issues(
-        f"project = LEF AND labels = {jql_quote(LEF_MOBILE_LABEL)}{lef_issue_type_clause()} ORDER BY status ASC, priority DESC"
+        f"project = LEF AND {created_since_clause()} "
+        f"AND labels = {jql_quote(LEF_MOBILE_LABEL)}{lef_issue_type_clause()} ORDER BY status ASC, priority DESC"
     )
     print(f"  LEF Mobile total: {len(issues)} issues")
     return issues
@@ -1489,7 +1499,7 @@ def main():
                     if release["label"] in lef_label_counts
                 }
                 mvp_totals["LEF_overall_done"] = jira_total(
-                    f'project = LEF AND status = "Done"{lef_issue_type_clause()}'
+                    f'project = LEF AND {created_since_clause()} AND status = "Done"{lef_issue_type_clause()}'
                 )
                 print(f"  LEF overall done total: {mvp_totals['LEF_overall_done']}")
                 mvp_totals["LEF_mobile_issues"] = fetch_lef_mobile_issues()
@@ -1497,7 +1507,7 @@ def main():
                 # Fetch LEM total backlog (all non-abandoned tickets)
                 print("Fetching LEM backlog total...")
                 mvp_totals["LEM_backlog"] = jira_total(
-                    "project = LEM AND statusCategory != Done AND status != Abandoned"
+                    f"project = LEM AND {created_since_clause()} AND statusCategory != Done AND status != Abandoned"
                 )
                 print(f"  LEM backlog total: {mvp_totals['LEM_backlog']}")
     except JiraQueryError as exc:

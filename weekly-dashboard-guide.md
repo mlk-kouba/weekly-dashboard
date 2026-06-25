@@ -126,3 +126,4 @@ The dashboard header shows whether a page came from a **Live Jira capture** or w
 - Release selectors are based on **Fix Versions** first, with labels kept alongside them for reference
 - LEF release/mobile tracking includes subtasks because those tags are applied at that level
 - A LEF item counts as **done** when its status is `Done`
+- All dashboard Jira queries only include tickets with `created >= 2026-01-01`
