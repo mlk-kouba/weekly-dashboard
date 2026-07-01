@@ -1237,7 +1237,14 @@ def roadmap_card() -> str:
         f'</div>'
     )
 
-def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_total: int, prev_slug: str = None) -> str:
+def what_changed_card(
+    date_str: str,
+    all_issues: dict,
+    prev_stats: dict,
+    mvp_total: int,
+    prev_slug: str = None,
+    prev_lef_release_label: str = None,
+) -> str:
     if not prev_stats or not prev_slug:
         return ""
 
@@ -1287,6 +1294,13 @@ def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_tot
         )
         alt = not alt
 
+    lef_release_changed = (
+        prev_lef_release_label is not None
+        and prev_lef_release_label != active_mvp_label()
+    )
+    prev_lef_display = release_label_display(prev_lef_release_label) if prev_lef_release_label else ""
+    current_lef_display = release_label_display(active_mvp_label())
+
     for proj in PROJECTS:
         b    = bucket_issues(all_issues[proj])
         prev = prev_stats.get(proj, {})
@@ -1294,13 +1308,24 @@ def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_tot
         prog = len(b["inprogress"]) + len(b["review"])
         open_ = len(b["open"])
         if proj == "LEF":
-            pct_curr = round(done / mvp_total * 100) if mvp_total else 0
-            pct_prev = round((prev.get("done") or 0) / mvp_total * 100) if mvp_total else None
-            row("LEF", f"{release_label_display(active_mvp_label())} — Completed",
-                prev.get("done"), done,
-                f'{pct_prev}% &rarr; {pct_curr}% complete' if pct_prev is not None else f'{pct_curr}% complete')
-            row("LEF", "Not Started",       prev.get("open"),      open_,  "", lower_is_better=True)
-            row("LEF", "In Review/Testing", prev.get("review"),    len(b["review"]))
+            if lef_release_changed:
+                row(
+                    "LEF",
+                    f"{current_lef_display} — Completed",
+                    None,
+                    done,
+                    f"Tracking rolled from {prev_lef_display} to {current_lef_display}.",
+                )
+                row("LEF", "Not Started", None, open_, "Release baseline reset")
+                row("LEF", "In Review/Testing", None, len(b["review"]))
+            else:
+                pct_curr = round(done / mvp_total * 100) if mvp_total else 0
+                pct_prev = round((prev.get("done") or 0) / mvp_total * 100) if mvp_total else None
+                row("LEF", f"{current_lef_display} — Completed",
+                    prev.get("done"), done,
+                    f'{pct_prev}% &rarr; {pct_curr}% complete' if pct_prev is not None else f'{pct_curr}% complete')
+                row("LEF", "Not Started",       prev.get("open"),      open_,  "", lower_is_better=True)
+                row("LEF", "In Review/Testing", prev.get("review"),    len(b["review"]))
         else:
             row(proj, "Done This Month", prev.get("done"),      done)
             row(proj, "In Progress",     prev.get("inprogress"), prog)
@@ -1330,7 +1355,8 @@ def what_changed_card(date_str: str, all_issues: dict, prev_stats: dict, mvp_tot
 
 def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
                 prev_stats: dict = None, prev_slug: str = None, mvp_totals: dict = None,
-                snapshot_source: str = SNAPSHOT_SOURCE_LIVE) -> str:
+                snapshot_source: str = SNAPSHOT_SOURCE_LIVE,
+                prev_lef_release_label: str = None) -> str:
     if today is None:
         today = datetime.date.today()
     label       = active_mvp_label(today)
@@ -1347,6 +1373,12 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
 
     def _card(proj):
         p = prev_stats.get(proj)
+        if (
+            proj == "LEF"
+            and prev_lef_release_label is not None
+            and prev_lef_release_label != active_mvp_label(today)
+        ):
+            p = None
         return project_card(
             proj, all_issues[proj],
             prev=p,
@@ -1365,7 +1397,14 @@ def render_html(all_issues: dict, date_str: str, today: datetime.date = None,
         mvp_totals.get("LEF_lookahead_counts", {}),
         mvp_totals.get("LEF_mobile_issues", []),
     ) + "\n" + roadmap_card()
-    wow        = what_changed_card(date_str, all_issues, prev_stats, lef_mvp, prev_slug=prev_slug)
+    wow        = what_changed_card(
+        date_str,
+        all_issues,
+        prev_stats,
+        lef_mvp,
+        prev_slug=prev_slug,
+        prev_lef_release_label=prev_lef_release_label,
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1448,6 +1487,12 @@ def main():
     filename   = f"{file_slug}_weekly_dashboard.html"
     label      = active_mvp_label(today)
     prev_slug, prev_stats = get_prev_stats(file_slug)
+    prev_snapshot = load_snapshot(prev_slug) if prev_slug else None
+    prev_lef_release_label = (
+        (((prev_snapshot or {}).get("config") or {}).get("lef") or {})
+        .get("active_release", {})
+        .get("label")
+    )
     saved_snapshot = load_snapshot(file_slug)
     use_saved_snapshot = saved_snapshot is not None and today < datetime.date.today()
     reuse_existing_dashboard = (
@@ -1522,6 +1567,7 @@ def main():
         prev_slug=prev_slug,
         mvp_totals=mvp_totals,
         snapshot_source=snapshot_source,
+        prev_lef_release_label=prev_lef_release_label,
     )
 
     with open(filename, "w", encoding="utf-8") as f:
