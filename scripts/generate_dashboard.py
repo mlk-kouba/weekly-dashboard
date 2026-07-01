@@ -115,7 +115,7 @@ def next_release_info(today: datetime.date = None) -> dict:
     """Return a dict describing the next upcoming release (the one we're building toward)."""
     d = today or datetime.date.today()
     for release, freeze, label in _release_schedule(d):
-        if release >= d:
+        if release > d:
             dtf = (freeze - d).days
             return {
                 "release": release,
@@ -556,7 +556,7 @@ def lef_release_clause(release: dict) -> str:
 
 def get_active_sprint_issues(project: str, today: datetime.date = None) -> list:
     """Return issues for a project.
-    LEF: all JUNEMVP/JULYMVP tickets across ALL sprints (Done = all MVP done tickets).
+    LEF: all tickets matching the configured active release across ALL sprints.
     LEM and LRF: all not-done tickets + done tickets updated this month (Done = done this month)."""
     d     = today or datetime.date.today()
     meta  = PROJECT_META[project]

@@ -15,8 +15,8 @@ Update the weekly engineering dashboard for the week of [DATE].
 Boards: LEF · LEM · LRF
 
 Labels:
-- LEF active release items → **Fix Version** `July 2026 Monthly Release` and label `JULYMVP`
-- LEF look-ahead release count → **Fix Version** `August 2026 Monthly Release *` and label `AugustPrio`
+- LEF active release items → **Fix Version** `August 2026 Monthly Release *` and label `AugustPrio`
+- LEF look-ahead release count → label `September`
 - LEF mobile tracker → label = `Mobile`
 
 Section titles:
@@ -33,10 +33,10 @@ For each board include:
   - Any alerts or risks
 
 For LEF specifically:
-  - Keep the primary board focused on the configured July release (`July 2026 Monthly Release` / `JULYMVP`)
-  - Show July release status (% done, tickets in flight, unstarted risk count)
+  - Keep the primary board focused on the configured August release (`August 2026 Monthly Release *` / `AugustPrio`)
+  - Show August release status (% done, tickets in flight, unstarted risk count)
   - Show overall LEF done count across the whole board
-  - Show the `AugustPrio` / `August 2026 Monthly Release *` count as look-ahead
+  - Show the `September` label count as look-ahead scope
   - Track `Mobile` labelled tickets separately
 
 For LEM:
@@ -61,7 +61,7 @@ Save as yymmdd-weekly-dashboard.html in C:/Users/mkouba/weekly-project-dashboard
 
 | Board | Key | Jira Label (MVP) | Title in Dashboard |
 |-------|-----|------------------|--------------------|
-| LEF   | LEF | Fix Versions + labels (`JULYMVP`, `AugustPrio`) | Assessment / ReadingPowerZone / SoR |
+| LEF   | LEF | Fix Versions + labels (`AugustPrio`, `September`) | Assessment / ReadingPowerZone / SoR |
 | LEM   | LEM | n/a (sprint-based) | Maintenance |
 | LRF   | LRF | n/a | Literacy Integration |
 
@@ -74,8 +74,8 @@ Save as yymmdd-weekly-dashboard.html in C:/Users/mkouba/weekly-project-dashboard
 
 Pull up the previous week's file from this folder and compare:
 
-- [ ] LEF July release (`July 2026 Monthly Release`) % done and in-flight count
-- [ ] LEF August release (`August 2026 Monthly Release *`) count for look-ahead planning
+- [ ] LEF August release (`August 2026 Monthly Release *`) % done and in-flight count
+- [ ] LEF September scope (`September`) count for look-ahead planning
 - [ ] LEF mobile tickets: are unassigned items getting owners?
 - [ ] LEM: were last week's flagged risks resolved?
 - [ ] LRF: overall completion % trending up

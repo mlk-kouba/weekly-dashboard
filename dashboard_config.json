@@ -1,15 +1,14 @@
 {
   "lef": {
     "active_release": {
-      "display": "July MVP",
-      "fix_version": "July 2026 Monthly Release",
-      "label": "JULYMVP"
+      "display": "August MVP",
+      "fix_version": "August 2026 Monthly Release *",
+      "label": "AugustPrio"
     },
     "lookahead_releases": [
       {
-        "display": "August Priority",
-        "fix_version": "August 2026 Monthly Release *",
-        "label": "AugustPrio"
+        "display": "September Scope",
+        "label": "September"
       }
     ],
     "mobile_label": "Mobile",
