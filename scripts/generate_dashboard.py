@@ -253,8 +253,10 @@ def jira_total(jql: str) -> int:
         "fields": ["summary"],
     })
     total = data.get("total")
-    if total is not None:
+    if total is not None and total > 0:
         return total
+    if total == 0:
+        return len(jira_search_issues(jql, fields="summary"))
     return len(jira_search_issues(jql, fields="summary"))
 
 
