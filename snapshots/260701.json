@@ -4,7 +4,7 @@
   "dashboard_date": "2026-07-01",
   "cutoff_utc": "2026-07-01T12:30:00+00:00",
   "source": "live",
-  "generated_at_utc": "2026-07-01T02:35:25.504533+00:00",
+  "generated_at_utc": "2026-07-01T02:37:20.160214+00:00",
   "config": {
     "lef": {
       "active_release": {
@@ -11751,7 +11751,7 @@
     "LEF_lookahead_counts": {
       "September": 55
     },
-    "LEF_overall_done": 0,
+    "LEF_overall_done": 692,
     "LEF_mobile_issues": [
       {
         "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
@@ -15581,7 +15581,7 @@
         }
       }
     ],
-    "LEM_backlog": 0
+    "LEM_backlog": 118
   },
   "stats": {
     "LEF": {
