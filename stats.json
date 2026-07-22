@@ -232,5 +232,31 @@
       "abandoned": 5,
       "total": 72
     }
+  },
+  "260722": {
+    "LEF": {
+      "done": 14,
+      "inprogress": 12,
+      "review": 8,
+      "open": 29,
+      "abandoned": 4,
+      "total": 67
+    },
+    "LEM": {
+      "done": 21,
+      "inprogress": 10,
+      "review": 7,
+      "open": 127,
+      "abandoned": 3,
+      "total": 168
+    },
+    "LRF": {
+      "done": 9,
+      "inprogress": 6,
+      "review": 0,
+      "open": 64,
+      "abandoned": 7,
+      "total": 86
+    }
   }
 }
