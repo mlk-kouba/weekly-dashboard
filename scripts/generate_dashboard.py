@@ -24,9 +24,9 @@ from urllib.parse import urlencode
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-JIRA_EMAIL    = os.environ.get("JIRA_EMAIL", "")
-JIRA_TOKEN    = os.environ.get("JIRA_API_TOKEN", "")
-JIRA_HOST     = os.environ.get("JIRA_INSTANCE", "learningaz.atlassian.net")
+JIRA_EMAIL    = os.environ.get("JIRA_EMAIL", "").strip()
+JIRA_TOKEN    = os.environ.get("JIRA_API_TOKEN", "").strip()
+JIRA_HOST     = os.environ.get("JIRA_INSTANCE", "learningaz.atlassian.net").strip()
 PROJECTS      = ["LEF", "LEM", "LRF"]
 DATE_OVERRIDE = os.environ.get("DASHBOARD_DATE", "").strip()
 CONFIG_FILE = "dashboard_config.json"
