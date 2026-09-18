@@ -315,12 +315,11 @@ def jira_issue_changelog(issue_key: str) -> list:
 
 
 def validate_jira_access():
-    me = jira_get("myself")
-    if not me.get("accountId"):
-        raise JiraQueryError(
-            "Jira authentication succeeded without an account identity. "
-            "Verify the JIRA_EMAIL and JIRA_API_TOKEN secrets."
-        )
+    jira_post("search/jql", {
+        "jql": f"project in ({', '.join(PROJECTS)}) AND {created_since_clause()} ORDER BY created DESC",
+        "maxResults": 1,
+        "fields": ["summary"],
+    })
 
 
 def jql_quote(value: str) -> str:
