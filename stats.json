@@ -440,5 +440,31 @@
       "abandoned": 19,
       "total": 100
     }
+  },
+  "260909": {
+    "LEF": {
+      "done": 45,
+      "inprogress": 0,
+      "review": 0,
+      "open": 0,
+      "abandoned": 3,
+      "total": 48
+    },
+    "LEM": {
+      "done": 7,
+      "inprogress": 13,
+      "review": 1,
+      "open": 161,
+      "abandoned": 79,
+      "total": 261
+    },
+    "LRF": {
+      "done": 8,
+      "inprogress": 2,
+      "review": 0,
+      "open": 79,
+      "abandoned": 19,
+      "total": 108
+    }
   }
 }
