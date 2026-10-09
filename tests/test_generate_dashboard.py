@@ -15,7 +15,10 @@ spec.loader.exec_module(generate_dashboard)
 
 class ValidateJiraAccessTests(unittest.TestCase):
     def test_validate_jira_access_checks_dashboard_search_permissions(self):
-        with mock.patch.object(generate_dashboard, "jira_post") as jira_post:
+        with (
+            mock.patch.object(generate_dashboard, "jira_post") as jira_post,
+            mock.patch.object(generate_dashboard, "jira_get") as jira_get,
+        ):
             generate_dashboard.validate_jira_access()
 
         jira_post.assert_called_once_with(
@@ -26,6 +29,7 @@ class ValidateJiraAccessTests(unittest.TestCase):
                 "fields": ["summary"],
             },
         )
+        jira_get.assert_not_called()
 
 
 if __name__ == "__main__":

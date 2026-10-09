@@ -315,6 +315,7 @@ def jira_issue_changelog(issue_key: str) -> list:
 
 
 def validate_jira_access():
+    """Verify search access to the tracked Jira projects without requiring profile access."""
     jira_post("search/jql", {
         "jql": f"project in ({', '.join(PROJECTS)}) AND {created_since_clause()} ORDER BY created DESC",
         "maxResults": 1,
